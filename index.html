@@ -607,16 +607,33 @@ const CONDS=[
 const CS=[{id:'resina',t:'Restauraciones con resina',tx:'Autorizo la realizacion de restauraciones con resina compuesta. Entiendo los beneficios, riesgos (sensibilidad, fractura, pigmentacion) y limitaciones. Conforme a NOM-004-SSA3-2012.'},{id:'limpieza',t:'Limpieza dental/Profilaxis',tx:'Autorizo la limpieza dental profesional. Puede haber sensibilidad transitoria y sangrado gingival leve.'},{id:'extraccion',t:'Extraccion quirurgica',tx:'Autorizo la extraccion del organo dental indicado. Riesgos: sangrado, inflamacion, infeccion, dolor postoperatorio, parestesia temporal o permanente.'},{id:'endodoncia',t:'Endodoncia (tratamiento de conductos)',tx:'Autorizo el tratamiento de conductos radiculares. Exito aproximado 95%. Se requiere restauracion definitiva en max. 15 dias.'},{id:'ortodoncia',t:'Ortodoncia',tx:'Autorizo el tratamiento de ortodoncia. Se requieren retenedores al finalizar. Riesgos: reabsorcion radicular, caries por higiene inadecuada.'},{id:'carillas_resina',t:'Carillas de resina',tx:'Autorizo carillas de resina compuesta. No son permanentes, requieren mantenimiento periodico.'},{id:'carillas_emax',t:'Carillas de ceramica E-max',tx:'Autorizo carillas E-max. La preparacion dental es en la mayoria de los casos irreversible.'},{id:'corona',t:'Corona/Protesis fija',tx:'Autorizo la colocacion de corona o protesis fija. Duracion depende del cuidado y la higiene oral.'},{id:'protesis_rem',t:'Protesis removible',tx:'Autorizo la elaboracion y colocacion de protesis removible. Requiere periodo de adaptacion y ajustes periodicos.'},{id:'blanqueamiento',t:'Blanqueamiento dental',tx:'Autorizo la aplicacion de agentes blanqueadores. El resultado no es permanente y no modifica el color de restauraciones existentes.'},{id:'botox',t:'Toxina botulinica (Botox/Bruxismo)',tx:'Autorizo la aplicacion de toxina botulinica tipo A. El efecto es temporal (3-6 meses) y se requieren aplicaciones periodicas.'},{id:'cirugia',t:'Cirugia oral',tx:'Autorizo el procedimiento quirurgico indicado. Riesgos: sangrado, infeccion, inflamacion, parestesia.'}];
 
 let odoData={},odoPedData={},bgtItems=[],curNote=null,condState={};
+function fixLooseQuotes(s){
+  let out='',inStr=false,i=0;
+  while(i<s.length){
+    const c=s[i];
+    if(c==='\\'&&inStr){out+=c+(s[i+1]||'');i+=2;continue;}
+    if(c==='"'){
+      if(!inStr){inStr=true;out+=c;i++;continue;}
+      let j=i+1;while(j<s.length&&/\s/.test(s[j]))j++;
+      const nx=s[j];
+      if(nx===undefined||',}]:'.includes(nx)){inStr=false;out+=c;i++;continue;}
+      out+='\\"';i++;continue;
+    }
+    out+=c;i++;
+  }
+  return out;
+}
 function parseAIJson(raw){
   let t=(raw||'').trim().replace(/```json|```/g,'').trim();
   t=t.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').replace(/\r\n|\r|\n/g,' ').replace(/\t/g,' ');
   const stripTrail=(s)=>{s=s.trim();while(/,\s*$/.test(s))s=s.replace(/,\s*$/,'');return s.replace(/,\s*([}\]])/g,'$1');};
-  try{return JSON.parse(stripTrail(t));}catch(e){
-    let f=stripTrail(t);
-    const ob=(f.match(/{/g)||[]).length,cb=(f.match(/}/g)||[]).length,oq=(f.match(/\[/g)||[]).length,cq=(f.match(/\]/g)||[]).length;
-    for(let i=0;i<oq-cq;i++)f+=']';
-    for(let i=0;i<ob-cb;i++)f+='}';
-    return JSON.parse(stripTrail(f));
+  const balance=(s)=>{const ob=(s.match(/{/g)||[]).length,cb=(s.match(/}/g)||[]).length,oq=(s.match(/\[/g)||[]).length,cq=(s.match(/\]/g)||[]).length;let f=s;for(let i=0;i<oq-cq;i++)f+=']';for(let i=0;i<ob-cb;i++)f+='}';return f;};
+  try{return JSON.parse(stripTrail(t));}catch(e1){
+    try{return JSON.parse(stripTrail(balance(stripTrail(t))));}catch(e2){
+      try{return JSON.parse(stripTrail(fixLooseQuotes(stripTrail(t))));}catch(e3){
+        return JSON.parse(stripTrail(balance(stripTrail(fixLooseQuotes(stripTrail(t))))));
+      }
+    }
   }
 }
 let curTooth=null,curMode='adult',curSurf='O';
