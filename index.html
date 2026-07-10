@@ -623,18 +623,33 @@ function fixLooseQuotes(s){
   }
   return out;
 }
+function closeTruncatedString(s){
+  let inStr=false,i=0;
+  while(i<s.length){
+    const c=s[i];
+    if(c==='\\'&&inStr){i+=2;continue;}
+    if(c==='"'){inStr=!inStr;i++;continue;}
+    i++;
+  }
+  return inStr?s+'"':s;
+}
 function parseAIJson(raw){
   let t=(raw||'').trim().replace(/```json|```/g,'').trim();
   t=t.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').replace(/\r\n|\r|\n/g,' ').replace(/\t/g,' ');
   const stripTrail=(s)=>{s=s.trim();while(/,\s*$/.test(s))s=s.replace(/,\s*$/,'');return s.replace(/,\s*([}\]])/g,'$1');};
   const balance=(s)=>{const ob=(s.match(/{/g)||[]).length,cb=(s.match(/}/g)||[]).length,oq=(s.match(/\[/g)||[]).length,cq=(s.match(/\]/g)||[]).length;let f=s;for(let i=0;i<oq-cq;i++)f+=']';for(let i=0;i<ob-cb;i++)f+='}';return f;};
-  try{return JSON.parse(stripTrail(t));}catch(e1){
-    try{return JSON.parse(stripTrail(balance(stripTrail(t))));}catch(e2){
-      try{return JSON.parse(stripTrail(fixLooseQuotes(stripTrail(t))));}catch(e3){
-        return JSON.parse(stripTrail(balance(stripTrail(fixLooseQuotes(stripTrail(t))))));
-      }
-    }
+  const attempts=[
+    (s)=>s,
+    (s)=>closeTruncatedString(s),
+    (s)=>balance(closeTruncatedString(s)),
+    (s)=>fixLooseQuotes(closeTruncatedString(s)),
+    (s)=>balance(fixLooseQuotes(closeTruncatedString(s)))
+  ];
+  let lastErr;
+  for(const fn of attempts){
+    try{return JSON.parse(stripTrail(fn(t)));}catch(e){lastErr=e;}
   }
+  throw lastErr;
 }
 let curTooth=null,curMode='adult',curSurf='O';
 let perioData=[];
@@ -706,7 +721,7 @@ async function buscarMed(){
   document.getElementById('loadMed').classList.add('show');document.getElementById('medRes').innerHTML='';
   const p='Eres experto farmacologico dental en Mexico. Responde UNICAMENTE con JSON valido, sin texto adicional, sin markdown, sin comentarios.\nMedicamento consultado: '+q+'\nJSON requerido: {"medicamento":"nombre generico","presentaciones":["Presentacion 1","Presentacion 2"],"dosis_dental":"descripcion de dosis","precio_aprox":"rango en pesos MXN","contraindicaciones":"principales contraindicaciones","interacciones":"interacciones con anestesicos locales","alternativas":["alternativa1","alternativa2"],"nota":"nota clinica importante o cadena vacia"}';
   try{
-    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GM+':generateContent?key='+k,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:p}]}],generationConfig:{temperature:0.1,maxOutputTokens:600,responseMimeType:'application/json'}})});
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GM+':generateContent?key='+k,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:p}]}],generationConfig:{temperature:0.1,maxOutputTokens:600,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0}}})});
     const d=await r.json();if(d.error)throw new Error(d.error.message);
     let raw=d.candidates[0].content.parts[0].text||'';
     raw=raw.trim().replace(/```json|```/g,'').trim();
@@ -736,7 +751,7 @@ document.getElementById('generateBtn').addEventListener('click',async()=>{
   const p1='Eres asistente clinico dental Mexico NOM-004-SSA3-2012. Responde UNICAMENTE con JSON valido, sin texto adicional.\nPACIENTE: '+pN+(pA?', '+pA:'')+(pS?', '+pS:'')+'. TIPO: '+vT+'\nTRANSCRIPCION DEL DICTADO: '+transcript+'\nREGLAS: Diagnostico y plan SIEMPRE completos. Indicaciones especificas segun procedimientos. Para odontograma especifica cara afectada (O,V,P,M,D), puede haber multiples hallazgos por diente.\nPara "interrogatorio": evalua CADA UNO de estos ids del interrogatorio clinico dirigido segun lo que el dentista o paciente mencionaron en el dictado: '+condListStr+'. Solo incluye en el arreglo los ids donde presente=true (el paciente confirmo padecerlo) o donde se menciono explicitamente que NO lo padece (presente=false); si un id no se menciono en absoluto, NO lo incluyas en el arreglo. Si se dio detalle (tipo, control, parentesco, frecuencia, medicamento) inclúyelo breve en "detalle".\nJSON requerido: {"soap":{"motivo_consulta":"texto","subjetivo":"texto","objetivo":"texto","diagnostico":"Sugerido: texto","plan":["item1"],"indicaciones":["item1"],"proxima_cita":"texto"},"antecedentes":{"heredofamiliares":"texto","sistemicos":"texto","alergias":"texto","medicamentos":"texto","cirugias":"texto","no_patologicos":"texto","gineco":"texto","dental_previo":"texto"},"interrogatorio":[{"id":"diabetes","presente":true,"detalle":"texto breve o vacio"}],"odontograma":[{"diente":16,"cara":"O","hallazgo":"caries","nota":"texto"}]}';
   const p2='Eres asistente dental en Acapulco Mexico. Responde UNICAMENTE con JSON valido, sin texto adicional. Precios realistas MXN 2025.\nDICTADO: '+transcript+'\nJSON requerido: {"presupuesto":[{"procedimiento":"nombre","descripcion":"breve","precio":1500,"cantidad":1}]}';
   try{
-    const[r1,r2]=await Promise.all([fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GM+':generateContent?key='+apiKey,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:p1}]}],generationConfig:{temperature:0.2,maxOutputTokens:8000,responseMimeType:'application/json'}})}),fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GM+':generateContent?key='+apiKey,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:p2}]}],generationConfig:{temperature:0.2,maxOutputTokens:3000,responseMimeType:'application/json'}})})]);
+    const[r1,r2]=await Promise.all([fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GM+':generateContent?key='+apiKey,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:p1}]}],generationConfig:{temperature:0.2,maxOutputTokens:8000,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0}}})}),fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GM+':generateContent?key='+apiKey,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:p2}]}],generationConfig:{temperature:0.2,maxOutputTokens:3000,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0}}})})]);
     const[d1,d2]=await Promise.all([r1.json(),r2.json()]);
     if(d1.error)throw new Error(d1.error.message);
     const pJ=parseAIJson;
@@ -836,7 +851,7 @@ function setupVoiceOdo(ids,isPed,mode){
       prompt='Eres asistente clinico dental Mexico. Responde UNICAMENTE con JSON valido, sin texto adicional.\nDICTADO DE EXPLORACION INTRAORAL ('+dientesRef+'): '+transcript+'\nREGLAS: Identifica cada diente mencionado y su(s) cara(s) con hallazgo. Cara: O=oclusal,V=vestibular,P=palatino/lingual,M=mesial,D=distal. Hallazgos posibles: caries,obturado,amalgama,corona,protesis,endodoncia,endoposte,fractura,movilidad,ausente,implante,otro. Puede haber varios hallazgos por diente en distintas caras.\nJSON requerido: {"odontograma":[{"diente":16,"cara":"O","hallazgo":"caries","nota":"texto breve o vacio"}]}';
     }
     try{
-      const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GM+':generateContent?key='+apiKey,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.2,maxOutputTokens:8000,responseMimeType:'application/json'}})});
+      const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GM+':generateContent?key='+apiKey,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.2,maxOutputTokens:8000,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0}}})});
       const data=await res.json();if(data.error)throw new Error(data.error.message);
       const raw=data.candidates[0].content.parts[0].text||'';
       const r=parseAIJson(raw);
@@ -963,7 +978,7 @@ document.getElementById('genBtnP').addEventListener('click',async()=>{
   document.getElementById('loadMsgP').classList.add('show');document.getElementById('genBtnP').disabled=true;
   const p='Eres asistente periodontal. Responde UNICAMENTE con JSON valido, sin texto adicional. Diagnostico segun clasificacion AAP/EFP 2017.\nDICTADO DEL SONDEO: '+transcript+'\nJSON requerido: {"sondeo":[{"diente":16,"MV":3,"V":2,"DV":4,"ML":3,"L":2,"DL":3,"sangrado":["MV"],"recesion":0,"furca":1,"nota":""}],"diagnostico":{"clasificacion":"Periodontitis estadio II grado B generalizada","descripcion":"texto descriptivo","plan":["raspado y alisado radicular"],"interconsulta":false}}';
   try{
-    const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GM+':generateContent?key='+apiKey,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:p}]}],generationConfig:{temperature:0.1,maxOutputTokens:6000,responseMimeType:'application/json'}})});
+    const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GM+':generateContent?key='+apiKey,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:p}]}],generationConfig:{temperature:0.1,maxOutputTokens:8000,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0}}})});
     const data=await res.json();if(data.error)throw new Error(data.error.message);
     let raw=data.candidates[0].content.parts[0].text.trim().replace(/```json|```/g,'').trim();
     const result=parseAIJson(raw);perioData=result.sondeo||[];
@@ -1072,7 +1087,7 @@ document.getElementById('genBtnE').addEventListener('click',async()=>{
   document.getElementById('loadMsgE').classList.add('show');document.getElementById('genBtnE').disabled=true;
   const prompt='Eres asistente clinico dental Mexico. Responde UNICAMENTE con JSON valido, sin texto adicional.\nPACIENTE: '+pN+(pA?', '+pA:'')+(pS?', '+pS:'')+'\nDICTADO DEL PROCEDIMIENTO: '+transcript+'\nREGLAS: Extrae los dientes tratados hoy. Hallazgos: restauracion=obturado, endodoncia=endodoncia, extraccion=ausente, amalgama=amalgama, corona=corona, carilla=corona. Cara: O=oclusal,V=vestibular,P=palatino/lingual,M=mesial,D=distal.\nJSON requerido: {"soap":{"procedimiento":"descripcion","subjetivo":"sintomas","objetivo":"hallazgos","diagnostico":"diagnostico","indicaciones":["indicacion1"],"proxima_cita":"cuando"},"odontograma_actualizacion":[{"diente":36,"cara":"O","hallazgo":"obturado","nota":"nota"}],"medicamentos_sugeridos":[{"nombre":"Ibuprofeno 400mg","dosis":"1 tableta cada 8 horas","duracion":"3 dias","indicacion":"dolor postoperatorio"}]}';
   try{
-    const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GM+':generateContent?key='+apiKey,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.2,maxOutputTokens:4000,responseMimeType:'application/json'}})});
+    const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GM+':generateContent?key='+apiKey,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.2,maxOutputTokens:8000,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0}}})});
     const data=await res.json();if(data.error)throw new Error(data.error.message);
     let raw=data.candidates[0].content.parts[0].text.trim().replace(/```json|```/g,'').trim();
     const r=parseAIJson(raw);
