@@ -1,0 +1,5 @@
+{
+  "DEMO-01": { "nombre": "Prueba 1", "vence": "2026-07-31" },
+  "DEMO-02": { "nombre": "Prueba 2", "vence": "2026-07-31" },
+  "DEMO-03": { "nombre": "Prueba 3", "vence": "2026-07-31" }
+}
