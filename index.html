@@ -4,8 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DentaNota</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <style>
 :root{--v:#5db8a0;--vo:#2e8b72;--vc:#e0f5f0;--cr:#f7faf9;--tx:#1e2d2a;--ts:#5a7068;--ro:#c0594a;--bd:#c8e0da;--bl:#ffffff;--na:#e09850;}
+body.dark{--v:#4aa88e;--vo:#6fcfb3;--vc:#1a3330;--cr:#111c1a;--tx:#e0f5f0;--ts:#8ab8ae;--ro:#e07060;--bd:#2a4440;--bl:#1a2e2b;--na:#e0a850;}
+body.dark header{background:#1a2e2b;border-color:#2a4440;}
+body.dark .odonto-popup{background:#1a2e2b;}
+body.dark canvas{background:#2a4440;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:"Segoe UI",system-ui,sans-serif;background:var(--cr);color:var(--tx);min-height:100vh;}
 header{background:var(--bl);border-bottom:1px solid var(--bd);padding:11px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:20;}
@@ -197,9 +202,20 @@ main{max-width:1020px;margin:0 auto;padding:18px 14px 80px;}
   <nav>
     <button class="nav-btn active" data-view="nueva">Nueva consulta</button>
     <button class="nav-btn" data-view="pacientes">Pacientes</button>
+    <button class="nav-btn" data-view="agenda">&#x1F4C5; Agenda</button>
     <button class="nav-btn" onclick="openDrModal()">&#x2699;&#xFE0F; Consultorio</button>
+    <button class="nav-btn" onclick="cambiarModo()" title="Cambiar entre Dentista y Medico">&#x1F504; Modo</button>
+    <button class="nav-btn" id="darkBtn" onclick="toggleDark()" title="Modo oscuro">&#x1F319;</button>
   </nav>
 </header>
+<div id="modoOverlay" style="display:none;position:fixed;inset:0;background:var(--cr);z-index:300;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:24px;">
+  <div style="font-size:15px;font-weight:700;color:var(--vo);margin-bottom:4px;">&#xBF;C&oacute;mo vas a usar la app hoy?</div>
+  <div style="font-size:12px;color:var(--ts);margin-bottom:20px;max-width:360px;">Puedes cambiarlo despu&eacute;s desde el bot&oacute;n "Modo" en la parte superior.</div>
+  <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;">
+    <button class="btn btn-p" style="padding:16px 26px;font-size:14px;" onclick="elegirModo('dentista')">&#x1F9B7; Odontolog&iacute;a<br><span style="font-weight:400;font-size:11px;">DentaNota</span></button>
+    <button class="btn btn-p" style="padding:16px 26px;font-size:14px;background:#378ADD;" onclick="elegirModo('medico')">&#x1FA7A; Medicina general<br><span style="font-weight:400;font-size:11px;">MediNota</span></button>
+  </div>
+</div>
 <div id="drModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center;">
   <div style="background:var(--bl);border-radius:12px;padding:22px;max-width:440px;width:92%;max-height:85vh;overflow-y:auto;">
     <h3 style="margin:0 0 4px;color:var(--vo);font-size:15px;">&#x2699;&#xFE0F; Datos del consultorio</h3>
@@ -238,11 +254,15 @@ main{max-width:1020px;margin:0 auto;padding:18px 14px 80px;}
     <button class="exp-tab" data-panel="t6">6 &middot; Consentimientos</button>
     <button class="exp-tab" data-panel="t7">7 &middot; Evoluci&#xF3;n</button>
     <button class="exp-tab" data-panel="t8">8 &middot; Receta m&#xE9;dica</button>
+    <button class="exp-tab" data-panel="t9">9 &middot; Agendar cita</button>
+    <button class="exp-tab" data-panel="t12">Formatos</button>
+    <button class="exp-tab" data-panel="t10" id="tabOrto" style="background:#faeeda;color:#7a5c1f;">&#x1F9B7; Ortodoncia</button>
+    <button class="exp-tab" data-panel="t11" id="tabEndo" style="background:#e6f1fb;color:#185fa5;">&#x1F9AC; Endodoncia</button>
   </div>
 
   <div class="exp-panel active" id="t1">
     <div class="card">
-      <div class="card-title">&#x1F4CB; Ficha de identificaci&#xF3;n <span class="exp-num" id="expNumber">DN-2026-0001</span></div>
+      <div class="card-title">&#x1F4CB; Ficha de identificaci&#xF3;n <span class="exp-num" id="expNumber" contenteditable="true" title="Toca para editar el n&#xFA;mero de expediente" style="cursor:text;outline:none;min-width:80px;display:inline-block;">DN-2026-0001</span> <span style="font-size:9px;color:var(--ts);font-weight:400;">(editable)</span></div>
       <div class="g3">
         <div class="fld ff"><label>Nombre completo *</label><input type="text" id="patientName" placeholder="Apellido paterno, materno, nombre(s)"></div>
         <div class="fld"><label>Fecha de nacimiento</label><input type="date" id="patientDob" onchange="calcAge()"></div>
@@ -271,12 +291,42 @@ main{max-width:1020px;margin:0 auto;padding:18px 14px 80px;}
         <div class="vital"><div class="vital-label">IMC (auto)</div><input id="vIMC" readonly style="color:var(--vo);font-weight:700;" placeholder="&#x2014;"><div class="vital-unit">kg/m&#xB2;</div></div>
         <div class="vital"><div class="vital-label">Saturaci&#xF3;n O&#x2082;</div><input id="vSat" placeholder="98"><div class="vital-unit">%</div></div>
       </div>
+      <div style="margin-top:10px;background:#e6f1fb;border:1px solid #85b7eb;border-radius:9px;padding:10px 12px;">
+        <div style="font-size:10px;font-weight:700;color:#185fa5;margin-bottom:7px;">&#x1F489; Registro de anest&#xE9;sico &#x2014; CONAMED</div>
+        <div class="g3">
+          <div class="fld"><label>Anest&#xE9;sico utilizado</label><select id="vAnesType" style="width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:11px;"><option value="">&#x2014; Selecciona</option><option>Lidoca&#xED;na 2% con epinefrina</option><option>Mepivaca&#xED;na 3% sin vasoconstrictor</option><option>Articca&#xED;na 4% con epinefrina</option><option>Bupivaca&#xED;na 0.5%</option><option>Otro</option></select></div>
+          <div class="fld"><label>No. de lote</label><input type="text" id="vAnesLote" placeholder="Ej. AB12345C"></div>
+          <div class="fld"><label>Fecha de vencimiento</label><input type="date" id="vAnesVence"></div>
+          <div class="fld"><label>No. de cartuchos</label><input type="number" id="vAnesCartuchos" placeholder="2" min="1" max="10"></div>
+          <div class="fld"><label>T&#xE9;cnica anest&#xE9;sica</label><select id="vAnesTecnica" style="width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:11px;"><option value="">&#x2014; Selecciona</option><option>Infiltrativa</option><option>Troncular / Bloqueo</option><option>Intraligamentaria</option><option>Intrapulpar</option><option>Tronc. nervio dentario inferior</option></select></div>
+          <div class="fld"><label>Lote del material principal</label><input type="text" id="vMatLote" placeholder="Ej. Resina, endodoncia..."></div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="border:1px solid #fac775;background:#fffdf7;">
+      <div class="card-title" style="color:#7a5c1f;">&#x26A1; M&#xF3;dulos especiales &#x2014; activa seg&#xFA;n el caso</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;background:#faeeda;border:1px solid #fac775;border-radius:9px;padding:10px 14px;font-size:12px;font-weight:500;color:#7a5c1f;">
+          <input type="checkbox" id="chkOrto" onchange="toggleModulo('orto',this.checked)" style="width:16px;height:16px;accent-color:#e09850;">
+          &#x1F9B7; Activar m&#xF3;dulo de <strong style="margin-left:3px;">Ortodoncia</strong>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;background:#e6f1fb;border:1px solid #85b7eb;border-radius:9px;padding:10px 14px;font-size:12px;font-weight:500;color:#185fa5;">
+          <input type="checkbox" id="chkEndo" onchange="toggleModulo('endo',this.checked)" style="width:16px;height:16px;accent-color:#185fa5;">
+          &#x1F9AC; Activar m&#xF3;dulo de <strong style="margin-left:3px;">Endodoncia</strong>
+        </label>
+      </div>
     </div>
     <div class="btn-row"><button class="btn btn-p" onclick="goTab('t2')">Continuar &#x2192; Historia cl&#xED;nica</button></div>
   </div>
 
   <div class="exp-panel" id="t2">
     <div class="mic-reminder"><div style="font-size:26px;">&#x1F3A4;</div><div class="mic-reminder-text"><strong>Inicia la grabaci&#xF3;n antes de comenzar</strong><br>Toca el micr&#xF3;fono, haz las preguntas al paciente y graba sus respuestas. La IA extraer&#xE1; toda la informaci&#xF3;n autom&#xE1;ticamente.</div></div>
+    <div class="card" style="border:1px solid var(--v);">
+      <div class="card-title">&#x1F5E3;&#xFE0F; Antes de grabar: consentimiento verbal</div>
+      <div class="ai-badge" style="background:var(--vc);border-color:var(--v);color:var(--vo);">Con el mic&#xF3;fono ya grabando, pide al paciente que diga en voz alta algo como esto &#x2014; quedar&#xE1; registrado en el audio y en la nota:</div>
+      <div style="background:var(--cr);border-radius:8px;padding:10px 12px;font-size:11.5px;line-height:1.7;font-style:italic;color:var(--tx);">"Declaro que la informaci&#xF3;n que voy a dar sobre mi salud es verdadera y completa, que nadie me obliga a dar esta consulta, y que autorizo al doctor(a) a hacerme la entrevista y la exploraci&#xF3;n cl&#xED;nica conforme a la NOM-004. Autorizo/no autorizo el uso de fotograf&#xED;as cl&#xED;nicas y he sido informado del aviso de privacidad."</div>
+      <div id="consentVozBadge" style="margin-top:8px;"></div>
+    </div>
     <div class="card">
       <div class="card-title">&#x1F3A4; Grabaci&#xF3;n de historia cl&#xED;nica</div>
       <div class="mic-section">
@@ -313,7 +363,7 @@ main{max-width:1020px;margin:0 auto;padding:18px 14px 80px;}
       <div class="g2">
         <div class="fld"><label>Antecedentes heredofamiliares</label><textarea id="antHF"></textarea></div>
         <div class="fld"><label>Enfermedades sist&#xE9;micas</label><textarea id="antSis"></textarea></div>
-        <div class="fld"><label class="aler-lbl">&#x26A0;&#xFE0F; Alergias *</label><input type="text" id="antAlergias" class="aler" placeholder="Penicilina, AINEs, l&#xE1;tex..."></div>
+        <div class="fld"><label class="aler-lbl">&#x26A0;&#xFE0F; Alergias *</label><input type="text" id="antAlergias" class="aler" placeholder="Penicilina, AINEs, l&#xE1;tex..." oninput="updAlerts()"><div id="alergiaSugerencia"></div></div>
         <div class="fld"><label>Medicamentos actuales</label><input type="text" id="antMeds"></div>
         <div class="fld"><label>Cirug&#xED;as previas</label><textarea id="antCirugias"></textarea></div>
         <div class="fld"><label>No patol&#xF3;gicos</label><textarea id="antNoPath"></textarea></div>
@@ -324,10 +374,16 @@ main{max-width:1020px;margin:0 auto;padding:18px 14px 80px;}
     </div>
     <div class="card">
       <div class="card-title">&#x1F48A; B&#xFA;squeda de medicamentos</div>
+      <div class="ai-badge" style="background:#fff8ec;border-color:#fac775;color:#7a5c1f;margin-bottom:8px;">&#x1F4D8; PLM: nuestro buscador r&#xE1;pido para consultar qu&#xE9; es, para qu&#xE9; sirve y la posolog&#xED;a de un medicamento.</div>
       <div style="display:flex;gap:7px;"><input type="text" id="medQ" placeholder="Busca un medicamento... ej. Clindamicina, Amoxicilina..." style="flex:1;padding:8px 10px;border:1px solid var(--bd);border-radius:7px;font-size:12px;"><button class="btn btn-p btn-sm" onclick="buscarMed()">Buscar</button></div>
       <div id="medRes"></div><div class="loading-msg" id="loadMed"><span class="spinner"></span>Buscando...</div>
     </div>
-    <div class="card"><div class="card-title">&#x2705; Interrogatorio cl&#xED;nico dirigido</div><div class="cond-grid" id="condGrid"></div></div>
+    <div class="card"><div class="card-title">&#x2705; Interrogatorio cl&#xED;nico dirigido</div>
+      <div class="ai-badge" style="background:#e6f1fb;border-color:#a9cdf0;color:#185fa5;margin-bottom:8px;">&#x2139;&#xFE0F; Estas son preguntas gu&#xED;a para el dentista &mdash; puedes agregar o quitar las que necesites para tu consulta.</div>
+      <div style="display:flex;gap:7px;margin-bottom:8px;"><input type="text" id="nuevaPregunta" placeholder="Agregar nueva pregunta gu&#xED;a..." style="flex:1;padding:7px 9px;border:1px solid var(--bd);border-radius:7px;font-size:12px;"><button class="btn btn-s btn-sm" onclick="agregarPregunta()">+ Agregar</button></div>
+      <div id="condResumen" style="background:var(--vc);border-radius:7px;padding:7px 9px;margin-bottom:8px;"></div>
+      <div class="cond-grid" id="condGrid"></div>
+    </div>
     <div class="btn-row"><button class="btn btn-p" onclick="goTab('t3')">Continuar &#x2192; Odontograma</button></div>
   </div>
 
@@ -450,6 +506,7 @@ main{max-width:1020px;margin:0 auto;padding:18px 14px 80px;}
 
   <div class="exp-panel" id="t5">
     <div class="card"><div class="card-title">&#x1F4B0; Presupuesto estimado</div><div class="ai-badge">Precios sugeridos por IA en MXN &#x2014; edita antes de presentar al paciente.</div><div id="bgtContent"></div></div>
+    <div class="card" style="border:1px dashed var(--na);"><div class="card-title">&#x1F512; Costos internos de laboratorio</div><div class="ai-badge" style="background:#fff8ec;border-color:#fac775;color:#7a5c1f;">Esta secci&#xF3;n es solo para ti &mdash; NO se imprime ni se muestra al paciente. Agrega aqu&#xED; el costo de laboratorio o de especialista de cada tratamiento para saber tu ganancia neta.</div><div id="costosInternosContent"></div></div>
     <div class="btn-row"><button class="btn btn-p" onclick="goTab('t6')">Continuar &#x2192; Consentimientos</button></div>
   </div>
 
@@ -464,35 +521,10 @@ main{max-width:1020px;margin:0 auto;padding:18px 14px 80px;}
       </div>
       <div style="font-size:10px;font-weight:600;color:var(--vo);margin-bottom:5px;">Firma digital del paciente &#x2014; con el dedo o mouse directamente en pantalla</div>
       <canvas id="signCanvas" class="canvas-sign" width="440" height="100"></canvas>
-      <div class="btn-row"><button class="btn btn-s btn-sm" onclick="clearSign()">Borrar firma</button></div>
+      <div id="signFechaHora" style="font-size:10px;color:var(--ts);text-align:center;margin-top:4px;display:none;"></div>
+      <div class="btn-row"><button class="btn btn-s btn-sm" onclick="clearSign()">Borrar firma</button><button class="btn btn-p btn-sm" onclick="sellarFirma()">&#x2713; Sellar con fecha y hora</button></div>
     </div>
     <div class="card"><div class="card-title">&#x1F4CB; Consentimientos por procedimiento</div><div id="csList"></div></div>
-    <div class="card">
-      <div class="card-title">&#x1F4C1; Formatos administrativos y cl&#xED;nicos</div>
-      <div style="display:flex;flex-direction:column;gap:14px;">
-        <div style="border:1px solid var(--bd);border-radius:8px;padding:10px;">
-          <div style="font-size:12px;font-weight:600;color:var(--vo);margin-bottom:6px;">Hoja de alta voluntaria</div>
-          <textarea id="altaTexto" placeholder="Diagnostico y tratamiento en curso que el paciente decide interrumpir..." style="width:100%;min-height:55px;padding:7px 9px;border:1px solid var(--bd);border-radius:6px;font-size:12px;font-family:inherit;"></textarea>
-          <div class="btn-row" style="margin-top:6px;"><button class="btn btn-s btn-sm" onclick="printAltaVoluntaria()">Imprimir hoja de alta voluntaria</button></div>
-        </div>
-        <div style="border:1px solid var(--bd);border-radius:8px;padding:10px;">
-          <div style="font-size:12px;font-weight:600;color:var(--vo);margin-bottom:6px;">Formato de interconsulta</div>
-          <input type="text" id="interEspecialidad" placeholder="Especialidad/profesional al que se refiere" style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:6px;font-size:12px;font-family:inherit;margin-bottom:6px;">
-          <textarea id="interMotivo" placeholder="Motivo de la interconsulta, hallazgo relevante, pregunta especifica..." style="width:100%;min-height:55px;padding:7px 9px;border:1px solid var(--bd);border-radius:6px;font-size:12px;font-family:inherit;"></textarea>
-          <div class="btn-row" style="margin-top:6px;"><button class="btn btn-s btn-sm" onclick="printInterconsulta()">Imprimir formato de interconsulta</button></div>
-        </div>
-        <div style="border:1px solid var(--bd);border-radius:8px;padding:10px;">
-          <div style="font-size:12px;font-weight:600;color:var(--vo);margin-bottom:6px;">Control de esterilizaci&#xF3;n</div>
-          <div style="font-size:11px;color:var(--ts);margin-bottom:6px;">Bitacora imprimible en blanco para llenar a mano por ciclo (fecha, tipo de esterilizador, indicador quimico/biologico, responsable).</div>
-          <div class="btn-row"><button class="btn btn-s btn-sm" onclick="printEsterilizacion()">Imprimir bitacora en blanco</button></div>
-        </div>
-        <div style="border:1px solid var(--bd);border-radius:8px;padding:10px;">
-          <div style="font-size:12px;font-weight:600;color:var(--vo);margin-bottom:6px;">Reglamento interno para pacientes</div>
-          <div style="font-size:11px;color:var(--ts);margin-bottom:6px;">Horarios, politica de cancelacion, formas de pago y conducta esperada en el consultorio.</div>
-          <div class="btn-row"><button class="btn btn-s btn-sm" onclick="printReglamento()">Imprimir reglamento interno</button></div>
-        </div>
-      </div>
-    </div>
     <div class="btn-row"><button class="btn btn-s" onclick="printConsent()">Imprimir consentimientos seleccionados</button><button class="btn btn-p" onclick="goTab('t7')">Continuar &#x2192; Evoluci&#xF3;n</button></div>
   </div>
 
@@ -521,6 +553,18 @@ main{max-width:1020px;margin:0 auto;padding:18px 14px 80px;}
       <div class="soap-section"><div class="soap-label">Diagn&#xF3;stico</div><p class="soap-edit" contenteditable="true" id="eDiag">&#x2014;</p></div>
       <div class="soap-section"><div class="soap-label">Indicaciones postoperatorias</div><ul class="soap-list soap-edit" contenteditable="true" id="eIndic"><li>&#x2014;</li></ul></div>
       <div class="soap-section"><div class="soap-label">Pr&#xF3;xima cita</div><p class="soap-edit" contenteditable="true" id="eProxima">&#x2014;</p></div>
+    </div>
+    <div class="card">
+      <div class="card-title">&#x1F489; Registro de anest&#xE9;sico aplicado</div>
+      <div class="ai-badge">Registra aqu&#xED; el anest&#xE9;sico usado en esta cita &mdash; se agrega como narrativa a la nota de evoluci&#xF3;n y al expediente impreso.</div>
+      <div class="g2">
+        <div class="fld"><label>Anest&#xE9;sico</label><select id="anesFarmaco"><option>Lidocaina 2% con epinefrina 1:100,000</option><option>Mepivacaina 3% sin vasoconstrictor</option><option>Articaina 4% con epinefrina 1:100,000</option><option>Otro</option></select></div>
+        <div class="fld"><label>T&#xE9;cnica</label><select id="anesTecnica"><option>Infiltrativa</option><option>Troncular</option><option>Intraligamentaria</option><option>Palatina/nasopalatina</option><option>Otra</option></select></div>
+        <div class="fld"><label>Cartuchos (1.8ml c/u)</label><input type="number" id="anesCartuchos" min="0" step="0.5" placeholder="Ej. 1.5"></div>
+        <div class="fld"><label>Sitio / diente(s)</label><input type="text" id="anesSitio" placeholder="Ej. Diente 36, cuadrante inferior derecho"></div>
+      </div>
+      <button class="btn btn-s btn-sm" onclick="addAnesRegistro()">+ Agregar a la nota</button>
+      <div id="anesRegistroList" style="margin-top:8px;"></div>
     </div>
     <div class="card" id="evolOdoCard" style="display:none;">
       <div class="card-title">&#x1F9B7; Odontograma actualizado por esta cita</div>
@@ -558,12 +602,308 @@ main{max-width:1020px;margin:0 auto;padding:18px 14px 80px;}
       </div>
     </div>
   </div>
+
+  <!-- PESTAÑA 9: AGENDA -->
+  <div class="exp-panel" id="t9">
+    <div class="card">
+      <div class="card-title">&#x1F4C5; Agendar cita para este paciente</div>
+      <div class="g2">
+        <div class="fld"><label>Paciente</label><input type="text" id="agPaciente" placeholder="Nombre del paciente" readonly></div>
+        <div class="fld"><label>Tel&#xE9;fono</label><input type="text" id="agTel" placeholder="744 123 4567" readonly></div>
+        <div class="fld"><label>Fecha de la cita *</label><input type="date" id="agFecha"></div>
+        <div class="fld"><label>Hora *</label><input type="time" id="agHora"></div>
+        <div class="fld"><label>Tipo de cita</label>
+          <select id="agTipo">
+            <option value="limpieza">Limpieza dental / Profilaxis</option>
+            <option value="seguimiento">Seguimiento de tratamiento</option>
+            <option value="extraccion">Extracci&#xF3;n</option>
+            <option value="endodoncia">Endodoncia</option>
+            <option value="restauracion">Restauraci&#xF3;n / Resina</option>
+            <option value="ortodoncia">Control de ortodoncia</option>
+            <option value="protesis">Pr&#xF3;tesis</option>
+            <option value="urgencia">Urgencia</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+        <div class="fld"><label>Notas de la cita</label><input type="text" id="agNota" placeholder="Ej. Continuar con resina D36, revisar D46..."></div>
+        <div class="fld"><label>Correo del paciente (para notificaci&#xF3;n)</label><input type="email" id="agCorreo" placeholder="correo@email.com"></div>
+        <div class="fld"><label>Recordatorio</label>
+          <select id="agRecordatorio">
+            <option value="1">1 d&#xED;a antes</option>
+            <option value="2">2 d&#xED;as antes</option>
+            <option value="3">3 d&#xED;as antes</option>
+            <option value="7">1 semana antes</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-p" onclick="guardarCitaAgenda()">&#x1F4BE; Guardar cita</button>
+        <button class="btn btn-s" onclick="verAgenda()">&#x1F4C5; Ver agenda completa</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="exp-panel" id="t12">
+    <div class="card">
+      <div class="card-title">&#x1F4C1; Formatos administrativos y cl&#xED;nicos</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="border:1px solid var(--bd);border-radius:8px;padding:10px;">
+          <div style="font-size:12px;font-weight:600;color:var(--vo);margin-bottom:6px;">Hoja de alta voluntaria</div>
+          <textarea id="altaTexto" placeholder="Diagnostico y tratamiento en curso que el paciente decide interrumpir..." style="width:100%;min-height:55px;padding:7px 9px;border:1px solid var(--bd);border-radius:6px;font-size:12px;font-family:inherit;"></textarea>
+          <div class="btn-row" style="margin-top:6px;"><button class="btn btn-s btn-sm" onclick="printAltaVoluntaria()">Imprimir hoja de alta voluntaria</button></div>
+        </div>
+        <div style="border:1px solid var(--bd);border-radius:8px;padding:10px;">
+          <div style="font-size:12px;font-weight:600;color:var(--vo);margin-bottom:6px;">Formato de interconsulta</div>
+          <input type="text" id="interEspecialidad" placeholder="Especialidad/profesional al que se refiere" style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:6px;font-size:12px;font-family:inherit;margin-bottom:6px;">
+          <textarea id="interMotivo" placeholder="Motivo de la interconsulta, hallazgo relevante, pregunta especifica..." style="width:100%;min-height:55px;padding:7px 9px;border:1px solid var(--bd);border-radius:6px;font-size:12px;font-family:inherit;"></textarea>
+          <div class="btn-row" style="margin-top:6px;"><button class="btn btn-s btn-sm" onclick="printInterconsulta()">Imprimir formato de interconsulta</button></div>
+        </div>
+        <div style="border:1px solid var(--bd);border-radius:8px;padding:10px;">
+          <div style="font-size:12px;font-weight:600;color:var(--vo);margin-bottom:6px;">Control de esterilizaci&#xF3;n</div>
+          <div style="font-size:11px;color:var(--ts);margin-bottom:6px;">Bitacora imprimible en blanco para llenar a mano por ciclo (fecha, tipo de esterilizador, indicador quimico/biologico, responsable).</div>
+          <div class="btn-row"><button class="btn btn-s btn-sm" onclick="printEsterilizacion()">Imprimir bitacora en blanco</button></div>
+        </div>
+        <div style="border:1px solid var(--bd);border-radius:8px;padding:10px;">
+          <div style="font-size:12px;font-weight:600;color:var(--vo);margin-bottom:6px;">Reglamento interno para pacientes</div>
+          <div style="font-size:11px;color:var(--ts);margin-bottom:6px;">Horarios, politica de cancelacion, formas de pago y conducta esperada en el consultorio.</div>
+          <div class="btn-row"><button class="btn btn-s btn-sm" onclick="printReglamento()">Imprimir reglamento interno</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MÓDULO ORTODONCIA -->
+  <div class="exp-panel" id="t10">
+    <div class="mic-reminder" style="background:#7a5c1f;"><div style="font-size:26px;">&#x1F9B7;</div><div class="mic-reminder-text"><strong>M&#xF3;dulo de Ortodoncia</strong><br>Registra el plan de tratamiento, controles mensuales y seguimiento fotogr&#xE1;fico. Dicta cada control y la IA lo estructura autom&#xE1;ticamente.</div></div>
+    <div class="card" style="border-color:#fac775;">
+      <div class="card-title" style="color:#7a5c1f;">&#x1F4CB; Datos iniciales del tratamiento</div>
+      <div class="g2">
+        <div class="fld"><label>Tipo de aparatolog&#xED;a</label>
+          <select id="ortoTipo" style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:7px;font-size:12px;">
+            <option value="">&#x2014; Selecciona</option>
+            <option>Brackets met&#xE1;licos convencionales</option>
+            <option>Brackets cer&#xE1;micos</option>
+            <option>Brackets de zafiro</option>
+            <option>Brackets de autoligado (Damon)</option>
+            <option>Alineadores transparentes (Invisalign)</option>
+            <option>Alineadores gen&#xE9;ricos</option>
+            <option>Aparatolog&#xED;a funcional (Fran&#xE4;kel, Bionator)</option>
+            <option>Ortodoncia interceptiva</option>
+            <option>Retenedores fijos/removibles</option>
+          </select>
+        </div>
+        <div class="fld"><label>Fecha de inicio</label><input type="date" id="ortoFechaInicio"></div>
+        <div class="fld"><label>Duraci&#xF3;n estimada</label><input type="text" id="ortoDuracion" placeholder="Ej. 18-24 meses"></div>
+        <div class="fld"><label>Fecha estimada de retiro</label><input type="date" id="ortoFechaFin"></div>
+      </div>
+      <div class="card-title" style="margin-top:14px;color:#7a5c1f;">&#x1F4CF; An&#xE1;lisis inicial</div>
+      <div class="g3">
+        <div class="fld"><label>Clase molar derecha</label><select id="ortoClaseMolarD" style="width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"><option>&#x2014;</option><option>Clase I</option><option>Clase II div 1</option><option>Clase II div 2</option><option>Clase III</option></select></div>
+        <div class="fld"><label>Clase molar izquierda</label><select id="ortoClaseMolarI" style="width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"><option>&#x2014;</option><option>Clase I</option><option>Clase II div 1</option><option>Clase II div 2</option><option>Clase III</option></select></div>
+        <div class="fld"><label>Clase canina derecha</label><select id="ortoClaseCanD" style="width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"><option>&#x2014;</option><option>Clase I</option><option>Clase II</option><option>Clase III</option></select></div>
+        <div class="fld"><label>Clase canina izquierda</label><select id="ortoClaseCanI" style="width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"><option>&#x2014;</option><option>Clase I</option><option>Clase II</option><option>Clase III</option></select></div>
+        <div class="fld"><label>Overjet (mm)</label><input type="number" id="ortoOverjet" placeholder="3" step="0.5" style="width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"></div>
+        <div class="fld"><label>Overbite (mm)</label><input type="number" id="ortoOverbite" placeholder="2" step="0.5" style="width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"></div>
+        <div class="fld"><label>Apiñamiento superior</label><select id="ortoApinSup" style="width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"><option>&#x2014;</option><option>Sin apiñamiento</option><option>Leve (&lt;4mm)</option><option>Moderado (4-8mm)</option><option>Severo (&gt;8mm)</option></select></div>
+        <div class="fld"><label>Apiñamiento inferior</label><select id="ortoApinInf" style="width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"><option>&#x2014;</option><option>Sin apiñamiento</option><option>Leve (&lt;4mm)</option><option>Moderado (4-8mm)</option><option>Severo (&gt;8mm)</option></select></div>
+        <div class="fld"><label>L&#xED;nea media</label><select id="ortoLineaMedia" style="width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"><option>&#x2014;</option><option>Centrada</option><option>Desviada a derecha</option><option>Desviada a izquierda</option></select></div>
+      </div>
+      <div class="fld" style="margin-top:8px;"><label>Observaciones adicionales del diagn&#xF3;stico</label><textarea id="ortoObsInicial" placeholder="Mordida abierta, cruzada, paladar ojival, dientes supernumerarios, ausencias..." style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:7px;font-size:12px;min-height:55px;font-family:inherit;"></textarea></div>
+    </div>
+    <div class="card" style="border-color:#fac775;">
+      <div class="card-title" style="color:#7a5c1f;">&#x1F3A4; Registrar control mensual por voz</div>
+      <div class="mic-section">
+        <div class="mic-controls"><button class="pause-btn" id="pauseBtnOrto" style="display:none;">&#x23F8;&#xFE0F;</button><button class="mic-btn" id="micBtnOrto" style="background:#e09850;">&#x1F3A4;</button></div>
+        <div class="status-text" id="stTxtOrto">Toca el micr&#xF3;fono para dictar el control</div>
+        <div class="timer" id="timerOrto" style="display:none;">00:00</div>
+      </div>
+      <div class="tx-box" id="txBoxOrto"><span id="finTxOrto"></span><span class="interim" id="intTxOrto"></span></div>
+      <div class="btn-row" id="actBtnsOrto" style="display:none;">
+        <button class="btn btn-s" id="discardBtnOrto">Descartar</button>
+        <button class="btn btn-p" id="genBtnOrto" style="background:#e09850;">Generar control con IA</button>
+      </div>
+      <div class="loading-msg" id="loadMsgOrto"><span class="spinner"></span>Procesando control...</div>
+      <div id="ortoControlesLista" style="margin-top:12px;"></div>
+    </div>
+    <div class="card" style="border-color:#fac775;">
+      <div class="card-title" style="color:#7a5c1f;">&#x1F4F8; Fotograf&#xED;as extraorales e intraorales</div>
+      <div style="font-size:11px;color:var(--ts);margin-bottom:8px;">Antes / Durante / Despu&#xE9;s del tratamiento</div>
+      <div class="photo-grid" id="ortoFotoGrid">
+        <div class="photo-th add"><label style="cursor:pointer;text-align:center;"><span style="font-size:20px;">+</span><br>Agregar foto<input type="file" accept="image/*" multiple style="display:none;" onchange="subirFotoOrto(this)"></label></div>
+      </div>
+    </div>
+    <div class="card" style="border-color:#fac775;">
+      <div class="card-title" style="color:#7a5c1f;">&#x1F4C4; Consentimiento informado &#x2014; Ortodoncia</div>
+      <div style="font-size:11px;line-height:1.7;color:var(--tx);margin-bottom:10px;">Autorizo al C.D. a realizar el tratamiento de ortodoncia indicado. He sido informado/a sobre: duración aproximada del tratamiento, necesidad de usar retenedores al finalizar, riesgo de reabsorción radicular, posibilidad de caries si la higiene es inadecuada, y que los resultados dependen del crecimiento y colaboración del paciente. Entiendo que los tiempos son estimados y pueden variar. Conforme a NOM-004-SSA3-2012 y CONAMED.</div>
+      <canvas id="signOrto" class="canvas-sign" width="440" height="80"></canvas>
+      <div class="btn-row"><button class="btn btn-s btn-sm" onclick="clearSignOrto()">Borrar firma</button><button class="btn btn-p btn-sm" onclick="sellarFirmaOrto()">&#x2713; Sellar firma</button></div>
+      <div id="signOrtoFecha" style="font-size:10px;color:var(--ts);text-align:center;margin-top:4px;display:none;"></div>
+    </div>
+    <div class="card" style="border-color:#fac775;">
+      <div class="card-title" style="color:#7a5c1f;">&#x1F4E4; Formato de referido a especialista</div>
+      <div class="g2">
+        <div class="fld"><label>Especialista / Cl&#xED;nica</label><input type="text" id="ortoRefEspecialista" placeholder="Nombre del ortodoncista o cl&#xED;nica"></div>
+        <div class="fld"><label>Motivo del referido</label><input type="text" id="ortoRefMotivo" placeholder="Ej. Tratamiento de ortodoncia completo"></div>
+        <div class="fld ff"><label>Observaciones para el especialista</label><textarea id="ortoRefObs" placeholder="Hallazgos relevantes, rx adjuntas, urgencia..." style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:7px;font-size:12px;min-height:50px;font-family:inherit;"></textarea></div>
+      </div>
+      <div class="btn-row"><button class="btn btn-p btn-sm" onclick="imprimirRefOrto()">&#x1F ¨; Imprimir referido ortodoncia</button></div>
+    </div>
+  </div>
+
+  <!-- MÓDULO ENDODONCIA -->
+  <div class="exp-panel" id="t11">
+    <div class="mic-reminder" style="background:#185fa5;"><div style="font-size:26px;">&#x1F9AC;</div><div class="mic-reminder-text"><strong>M&#xF3;dulo de Endodoncia</strong><br>Registra el tratamiento de conductos sesión por sesión. Dicta cada cita y la IA estructura el reporte automáticamente.</div></div>
+    <div class="card" style="border-color:#85b7eb;">
+      <div class="card-title" style="color:#185fa5;">&#x1F9AC; Diagn&#xF3;stico pulpar y periapical</div>
+      <div class="g2">
+        <div class="fld"><label>Diente a tratar</label><input type="text" id="endoDiente" placeholder="Ej. 36, 46, 16..."></div>
+        <div class="fld"><label>Diagn&#xF3;stico pulpar</label>
+          <select id="endoDxPulpar" style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:7px;font-size:12px;">
+            <option value="">&#x2014; Selecciona</option>
+            <option>Pulpa normal</option>
+            <option>Pulpitis reversible</option>
+            <option>Pulpitis irreversible sintom&#xE1;tica</option>
+            <option>Pulpitis irreversible asintom&#xE1;tica</option>
+            <option>Necrosis pulpar</option>
+            <option>Previamente tratado</option>
+            <option>Previamente iniciado</option>
+          </select>
+        </div>
+        <div class="fld"><label>Diagn&#xF3;stico periapical</label>
+          <select id="endoDxPeriapical" style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:7px;font-size:12px;">
+            <option value="">&#x2014; Selecciona</option>
+            <option>Tejidos apicales normales</option>
+            <option>Periodontitis apical sintom&#xE1;tica</option>
+            <option>Periodontitis apical asintom&#xE1;tica</option>
+            <option>Absceso apical agudo</option>
+            <option>Absceso apical cr&#xF3;nico</option>
+            <option>Osteitis condensante</option>
+          </select>
+        </div>
+        <div class="fld"><label>N&#xFA;mero de conductos</label><input type="number" id="endoNumConductos" placeholder="1" min="1" max="5" style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:7px;font-size:12px;"></div>
+        <div class="fld"><label>T&#xE9;cnica utilizada</label>
+          <select id="endoTecnica" style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:7px;font-size:12px;">
+            <option value="">&#x2014; Selecciona</option>
+            <option>Rotatoria (ProTaper, WaveOne)</option>
+            <option>Reciprocante (Reciproc)</option>
+            <option>Manual escalonada</option>
+            <option>Manual step-back</option>
+            <option>H&#xED;brida (manual + rotatoria)</option>
+          </select>
+        </div>
+        <div class="fld"><label>N&#xFA;mero de sesiones estimadas</label><input type="number" id="endoSesiones" placeholder="2" min="1" max="10" style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:7px;font-size:12px;"></div>
+      </div>
+      <div class="card-title" style="margin-top:14px;color:#185fa5;">&#x1F4CF; Longitud de trabajo por conducto</div>
+      <div class="g3">
+        <div class="fld"><label>Conducto M/MV (mm)</label><input type="number" id="endoLT1" placeholder="21.5" step="0.5" style="width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"></div>
+        <div class="fld"><label>Conducto D/DV (mm)</label><input type="number" id="endoLT2" placeholder="21.0" step="0.5" style="width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"></div>
+        <div class="fld"><label>Conducto P/ML (mm)</label><input type="number" id="endoLT3" placeholder="22.0" step="0.5" style="width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"></div>
+        <div class="fld"><label>Conducto DL (mm)</label><input type="number" id="endoLT4" placeholder="21.5" step="0.5" style="width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"></div>
+        <div class="fld"><label>Lima apical maestra</label><input type="text" id="endoLAM" placeholder="Ej. 40, 45, 50" style="width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"></div>
+        <div class="fld"><label>Cono de obturaci&#xF3;n</label><input type="text" id="endoCono" placeholder="Ej. Gutapercha 40, ProTaper F3" style="width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"></div>
+      </div>
+      <div class="card-title" style="margin-top:14px;color:#185fa5;">&#x1F9EA; Irrigaci&#xF3;n y medicaci&#xF3;n</div>
+      <div class="g2">
+        <div class="fld"><label>Irrigantes utilizados</label>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;"><input type="checkbox" id="endoIrrigNaOCl"> Hipoclorito de sodio (NaOCl) %: <input type="text" style="width:50px;padding:2px 5px;border:1px solid var(--bd);border-radius:4px;font-size:11px;" placeholder="5.25"></label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;"><input type="checkbox" id="endoIrrigEDTA"> EDTA 17%</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;"><input type="checkbox" id="endoIrrigCHX"> Clorhexidina 2%</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;"><input type="checkbox" id="endoIrrigSSI"> Soluci&#xF3;n salina ist&#xF3;nica</label>
+          </div>
+        </div>
+        <div class="fld"><label>Medicamento intraconducto</label>
+          <select id="endoMedIntra" style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:7px;font-size:12px;">
+            <option value="">&#x2014; Selecciona</option>
+            <option>Hidr&#xF3;xido de calcio</option>
+            <option>Cresophene</option>
+            <option>Formocresol</option>
+            <option>Ledermix</option>
+            <option>Sin medicaci&#xF3;n intraconducto</option>
+          </select>
+        </div>
+        <div class="fld"><label>T&#xE9;cnica de obturaci&#xF3;n</label>
+          <select id="endoObturacion" style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:7px;font-size:12px;">
+            <option value="">&#x2014; Selecciona</option>
+            <option>Condensaci&#xF3;n lateral fr&#xED;a</option>
+            <option>Condensaci&#xF3;n vertical caliente</option>
+            <option>Sistema Thermafil</option>
+            <option>GuttaCore</option>
+            <option>Cono &#xFA;nico (WaveOne, Reciproc)</option>
+          </select>
+        </div>
+        <div class="fld"><label>Cemento sellador</label><input type="text" id="endoCemento" placeholder="Ej. AH Plus, Sealapex, MTA Fillapex" style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:7px;font-size:12px;"></div>
+      </div>
+    </div>
+    <div class="card" style="border-color:#85b7eb;">
+      <div class="card-title" style="color:#185fa5;">&#x1F3A4; Registrar sesi&#xF3;n por voz</div>
+      <div class="mic-section">
+        <div class="mic-controls"><button class="pause-btn" id="pauseBtnEndo" style="display:none;">&#x23F8;&#xFE0F;</button><button class="mic-btn" id="micBtnEndo" style="background:#185fa5;">&#x1F3A4;</button></div>
+        <div class="status-text" id="stTxtEndo">Toca el micr&#xF3;fono para dictar la sesi&#xF3;n</div>
+        <div class="timer" id="timerEndo" style="display:none;">00:00</div>
+      </div>
+      <div class="tx-box" id="txBoxEndo"><span id="finTxEndo"></span><span class="interim" id="intTxEndo"></span></div>
+      <div class="btn-row" id="actBtnsEndo" style="display:none;">
+        <button class="btn btn-s" id="discardBtnEndo">Descartar</button>
+        <button class="btn btn-p" id="genBtnEndo" style="background:#185fa5;">Generar reporte de sesi&#xF3;n con IA</button>
+      </div>
+      <div class="loading-msg" id="loadMsgEndo"><span class="spinner"></span>Procesando sesi&#xF3;n...</div>
+      <div id="endoSesionesLista" style="margin-top:12px;"></div>
+    </div>
+    <div class="card" style="border-color:#85b7eb;">
+      <div class="card-title" style="color:#185fa5;">&#x1F4F8; Radiograf&#xED;as del tratamiento</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+        <span style="font-size:11px;background:#e6f1fb;padding:3px 9px;border-radius:20px;color:#185fa5;">Diagn&#xF3;stico</span>
+        <span style="font-size:11px;background:#e6f1fb;padding:3px 9px;border-radius:20px;color:#185fa5;">Conductometr&#xED;a</span>
+        <span style="font-size:11px;background:#e6f1fb;padding:3px 9px;border-radius:20px;color:#185fa5;">Conom&#xE9;trica</span>
+        <span style="font-size:11px;background:#e6f1fb;padding:3px 9px;border-radius:20px;color:#185fa5;">Final/Obturaci&#xF3;n</span>
+      </div>
+      <div class="photo-grid" id="endoRxGrid">
+        <div class="photo-th add"><label style="cursor:pointer;text-align:center;"><span style="font-size:20px;">+</span><br>Subir Rx<input type="file" accept="image/*" multiple style="display:none;" onchange="subirRxEndo(this)"></label></div>
+      </div>
+    </div>
+    <div class="card" style="border-color:#85b7eb;">
+      <div class="card-title" style="color:#185fa5;">&#x1F4C4; Consentimiento informado &#x2014; Endodoncia</div>
+      <div style="font-size:11px;line-height:1.7;color:var(--tx);margin-bottom:10px;">Autorizo al C.D. a realizar el tratamiento de conductos radiculares en el diente indicado. He sido informado/a de que: la endodoncia no garantiza el 100% de éxito biológico (tasa esperada ~90-95%), puede requerirse más de una sesión, el diente debe restaurarse definitivamente dentro de los 15 días posteriores para evitar fractura o reinfección, en casos complejos puede ser necesario referir a un especialista en endodoncia. Los riesgos incluyen: fractura de instrumento, perforación radicular, resolución incompleta de la infección. Conforme a NOM-004-SSA3-2012 y CONAMED.</div>
+      <canvas id="signEndo" class="canvas-sign" width="440" height="80"></canvas>
+      <div class="btn-row"><button class="btn btn-s btn-sm" onclick="clearSignEndo()">Borrar firma</button><button class="btn btn-p btn-sm" onclick="sellarFirmaEndo()">&#x2713; Sellar firma</button></div>
+      <div id="signEndoFecha" style="font-size:10px;color:var(--ts);text-align:center;margin-top:4px;display:none;"></div>
+    </div>
+    <div class="card" style="border-color:#85b7eb;">
+      <div class="card-title" style="color:#185fa5;">&#x1F4E4; Formato de referido a especialista</div>
+      <div class="g2">
+        <div class="fld"><label>Endodoncista / Cl&#xED;nica</label><input type="text" id="endoRefEspecialista" placeholder="Nombre del endodoncista"></div>
+        <div class="fld"><label>Motivo del referido</label><input type="text" id="endoRefMotivo" placeholder="Ej. Caso complejo, calcificaciones, retratamiento"></div>
+        <div class="fld ff"><label>Observaciones para el especialista</label><textarea id="endoRefObs" placeholder="Hallazgos, rx adjuntas, medicaci&#xF3;n actual..." style="width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:7px;font-size:12px;min-height:50px;font-family:inherit;"></textarea></div>
+      </div>
+      <div class="btn-row"><button class="btn btn-p btn-sm" onclick="imprimirRefEndo()">&#x1F5A8;&#xFE0F; Imprimir referido endodoncia</button></div>
+    </div>
+  </div>
 </div>
 
 <div class="view" id="view-pacientes">
   <div class="search-bar"><input type="text" id="searchInput" placeholder="&#x1F50D; Buscar por nombre o n&#xFA;mero de expediente..." oninput="renderPatients()"></div>
   <div id="alertasCitas" style="margin-bottom:10px;"></div>
   <div class="pt-list" id="ptList"></div>
+</div>
+
+<!-- VISTA AGENDA -->
+<div class="view" id="view-agenda">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+    <div style="font-size:16px;font-weight:600;color:var(--vo);">&#x1F4C5; Agenda del consultorio</div>
+    <div style="display:flex;gap:7px;align-items:center;">
+      <button class="btn btn-s btn-sm" onclick="cambiarSemana(-1)">&#x2190; Semana anterior</button>
+      <span id="semanaLabel" style="font-size:12px;font-weight:500;color:var(--vo);min-width:160px;text-align:center;"></span>
+      <button class="btn btn-s btn-sm" onclick="cambiarSemana(1)">Semana siguiente &#x2192;</button>
+      <button class="btn btn-p btn-sm" onclick="cambiarSemana(0)">Hoy</button>
+    </div>
+  </div>
+  <div id="alertasCumple" style="margin-bottom:10px;"></div>
+  <div id="agendaGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;"></div>
+  <div class="card" style="margin-top:14px;">
+    <div class="card-title">&#x1F4CB; Todas las citas pr&#xF3;ximas</div>
+    <div id="listaCitas"></div>
+  </div>
 </div>
 </main>
 
@@ -581,14 +921,106 @@ main{max-width:1020px;margin:0 auto;padding:18px 14px 80px;}
 
 <script>
 const GM='gemini-2.5-flash';
-const H={sano:{c:'#f8f8f6',l:'Sano'},caries:{c:'#E24B4A',l:'Caries'},obturado:{c:'#85B7EB',l:'Obturado/Restaurado'},amalgama:{c:'#A9A9A9',l:'Amalgama'},corona:{c:'#FAC775',l:'Corona/Carilla'},protesis:{c:'#FAC775',l:'Protesis fija'},endodoncia:{c:'#1D9E75',l:'Endodoncia'},endoposte:{c:'#9B59B6',l:'Endoposte'},fractura:{c:'#f8f8f6',l:'Fractura'},movilidad:{c:'#f8f8f6',l:'Movilidad'},ausente:{c:'#f1efe8',l:'Ausente'},implante:{c:'#3498DB',l:'Implante'},otro:{c:'#b5b5ad',l:'Otro'}};
+
+// ===== FOLIO + VERIFICACION POR QR (firma digital local, sin servidor) =====
+function b64u(buf){return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+function unb64u(str){str=str.replace(/-/g,'+').replace(/_/g,'/');while(str.length%4)str+='=';const bin=atob(str);const arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);return arr.buffer;}
+async function getVerifyKeyPair(){
+  const saved=localStorage.getItem('dn_verify_priv_jwk');
+  if(saved){
+    const jwk=JSON.parse(saved);
+    const priv=await crypto.subtle.importKey('jwk',jwk,{name:'ECDSA',namedCurve:'P-256'},false,['sign']);
+    const pubB64=localStorage.getItem('dn_verify_pub_b64');
+    return{priv,pubB64};
+  }
+  const pair=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']);
+  const jwk=await crypto.subtle.exportKey('jwk',pair.privateKey);
+  const rawPub=await crypto.subtle.exportKey('raw',pair.publicKey);
+  const pubB64=b64u(rawPub);
+  localStorage.setItem('dn_verify_priv_jwk',JSON.stringify(jwk));
+  localStorage.setItem('dn_verify_pub_b64',pubB64);
+  return{priv:pair.privateKey,pubB64};
+}
+function generarFolio(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';
+  for(let i=0;i<8;i++){if(i===4)s+='-';s+=chars[Math.floor(Math.random()*chars.length)];}
+  return s;
+}
+async function firmarDocumento(tipo,resumen){
+  const{priv,pubB64}=await getVerifyKeyPair();
+  const folio=generarFolio();
+  const payload={f:folio,t:tipo,...resumen,dr:getDoctorInfo().nombre,ced:getDoctorInfo().cedula,ts:new Date().toISOString()};
+  const data=new TextEncoder().encode(JSON.stringify(payload));
+  const sig=await crypto.subtle.sign({name:'ECDSA',hash:'SHA-256'},priv,data);
+  return{folio,payloadB64:b64u(data),sigB64:b64u(sig),pubB64};
+}
+function urlVerificacion(folio,payloadB64,sigB64,pubB64){
+  const base=location.origin+location.pathname;
+  return base+'?verificar=1&f='+encodeURIComponent(folio)+'&p='+encodeURIComponent(payloadB64)+'&s='+encodeURIComponent(sigB64)+'&k='+encodeURIComponent(pubB64);
+}
+function qrDataUrl(text){return new Promise((resolve,reject)=>{if(typeof QRCode==='undefined')return reject(new Error('QR no disponible'));QRCode.toDataURL(text,{width:130,margin:1,color:{dark:'#1e2d2a',light:'#ffffff'}},(err,url)=>err?reject(err):resolve(url));});}
+function insertarQR(elId,url){
+  const el=document.getElementById(elId);if(!el||typeof QRCode==='undefined')return;
+  QRCode.toDataURL(url,{width:130,margin:1,color:{dark:'#1e2d2a',light:'#ffffff'}},(err,dataUrl)=>{if(!err)el.innerHTML='<img src="'+dataUrl+'" style="width:100%;height:100%;">';});
+}
+async function verificarDesdeURL(){
+  try{
+    const qs=new URLSearchParams(location.search);
+    const folio=qs.get('f'),payloadB64=qs.get('p'),sigB64=qs.get('s'),pubB64=qs.get('k');
+    const pub=await crypto.subtle.importKey('raw',unb64u(pubB64),{name:'ECDSA',namedCurve:'P-256'},false,['verify']);
+    const data=unb64u(payloadB64);
+    const ok=await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},pub,unb64u(sigB64),data);
+    const payload=JSON.parse(new TextDecoder().decode(data));
+    const filas=Object.entries(payload).filter(([k])=>!['f','t','ts'].includes(k)).map(([k,v])=>'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eef6f4;font-size:13px;"><span style="color:#5a7068;">'+k+'</span><strong>'+v+'</strong></div>').join('');
+    document.getElementById('verifBox').innerHTML=(ok?
+      '<div style="font-size:40px;">&#x2705;</div><h2 style="color:#1D9E75;margin:8px 0;">Documento aut&eacute;ntico</h2><div style="font-size:12px;color:#5a7068;margin-bottom:14px;">Firmado digitalmente por '+payload.dr+' &middot; C&eacute;dula '+payload.ced+'</div>'
+      :'<div style="font-size:40px;">&#x26A0;&#xFE0F;</div><h2 style="color:#c0594a;margin:8px 0;">No se pudo verificar</h2><div style="font-size:12px;color:#5a7068;margin-bottom:14px;">El contenido no coincide con la firma. Este documento pudo haber sido alterado.</div>')
+      +'<div style="background:#f7faf9;border-radius:10px;padding:14px;text-align:left;"><div style="font-size:11px;color:#5a7068;margin-bottom:6px;">Folio '+folio+'</div>'+filas+'</div>'
+      +'<div style="font-size:10px;color:#aaa;margin-top:16px;">DentaNota &middot; Verificaci&oacute;n de documento por firma digital local</div>';
+  }catch(e){
+    document.getElementById('verifBox').innerHTML='<div style="font-size:40px;">&#x26A0;&#xFE0F;</div><h2 style="color:#c0594a;">No se pudo verificar</h2><div style="font-size:12px;color:#5a7068;">El c&oacute;digo de verificaci&oacute;n no es v&aacute;lido o est&aacute; incompleto.</div>';
+  }
+}
+function checkModoVerificacion(){
+  const qs=new URLSearchParams(location.search);
+  if(qs.get('verificar')!=='1')return false;
+  document.body.innerHTML='<div id="verifBox" style="max-width:480px;margin:60px auto;padding:24px;font-family:\'Segoe UI\',sans-serif;text-align:center;"><div style="font-size:15px;color:#5a7068;">Verificando documento&hellip;</div></div>';
+  verificarDesdeURL();
+  return true;
+}
+if(checkModoVerificacion()){
+  throw new Error('DENTANOTA_MODO_VERIFICACION');
+}
+
+// ===== MODO DENTISTA / MEDICO GENERAL =====
+const TABS_SOLO_DENTAL=['t3','t3b','t3c','t3d','t10','t11'];
+function getModo(){return localStorage.getItem('dn_modo')||'';}
+function elegirModo(m){localStorage.setItem('dn_modo',m);document.getElementById('modoOverlay').style.display='none';aplicarModo();}
+function cambiarModo(){document.getElementById('modoOverlay').style.display='flex';}
+function aplicarModo(){
+  const m=getModo();
+  const esMedico=m==='medico';
+  document.querySelector('.logo-text').textContent=esMedico?'MediNota':'DentaNota';
+  document.querySelector('.logo-icon').textContent=esMedico?'\u{1FA7A}':'\u{1F9B7}';
+  TABS_SOLO_DENTAL.forEach(id=>{
+    const tab=document.querySelector('[data-panel="'+id+'"]');
+    if(tab)tab.style.display=esMedico?'none':'';
+  });
+  const tabOrto=document.getElementById('tabOrto'),tabEndo=document.getElementById('tabEndo');
+  if(tabOrto)tabOrto.style.display=esMedico?'none':'';
+  if(tabEndo)tabEndo.style.display=esMedico?'none':'';
+}
+if(!getModo())document.getElementById('modoOverlay').style.display='flex';
+setTimeout(aplicarModo,0);
+
+const H={sano:{c:'#f8f8f6',l:'Sano'},caries:{c:'#E24B4A',l:'Caries'},resina:{c:'#3B82C4',l:'Resina'},resina_filtrada:{c:'#3B82C4',l:'Resina filtrada',border:'#E24B4A'},obturado:{c:'#3B82C4',l:'Resina'},amalgama:{c:'#A9A9A9',l:'Amalgama'},amalgama_filtrada:{c:'#A9A9A9',l:'Amalgama filtrada',border:'#E24B4A'},corona:{c:'#FAC775',l:'Corona (contorno)'},protesis:{c:'#FAC775',l:'Protesis fija (contorno)'},carilla:{c:'#FAC775',l:'Carilla'},endodoncia:{c:'#1D9E75',l:'Endodoncia'},endoposte:{c:'#3FAE5A',l:'Endoposte'},fractura:{c:'#f8f8f6',l:'Fractura'},movilidad:{c:'#f8f8f6',l:'Movilidad'},ausente:{c:'#f1efe8',l:'Ausencia clinica'},resto_radicular:{c:'#f8f8f6',l:'Resto radicular'},implante:{c:'#3498DB',l:'Implante'},otro:{c:'#b5b5ad',l:'Otro'}};
 const SL={O:'Oclusal',V:'Vestibular',P:'Palat/Ling',M:'Mesial',D:'Distal'};
 const SS=['O','V','P','M','D'];
 const SUP=[18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
 const INF=[48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
 const PSUP=[55,54,53,52,51,61,62,63,64,65];
 const PINF=[85,84,83,82,81,71,72,73,74,75];
-const CONDS=[
+const CONDS_BASE=[
   // Sistemicos (antecedentes medicos personales)
   {id:'diabetes',cat:'Sistemicos',l:'Diabetes',d:'Tipo? Controlada?'},
   {id:'hipertension',cat:'Sistemicos',l:'Hipertension arterial',d:'Controlada?'},
@@ -652,8 +1084,33 @@ const CONDS=[
   {id:'sn_mareos',cat:'Sistema nervioso',l:'Mareos',d:'Frecuencia?'},
   {id:'sn_convulsiones',cat:'Sistema nervioso',l:'Convulsiones',d:'Detalle'},
   {id:'sn_derrame',cat:'Sistema nervioso',l:'Antecedente de derrame cerebral',d:'Hace cuanto?'},
-  {id:'sn_parkinson',cat:'Sistema nervioso',l:'Parkinson',d:'Detalle'}
+  {id:'sn_parkinson',cat:'Sistema nervioso',l:'Parkinson',d:'Detalle'},
+  // Consumo de sustancias
+  {id:'sus_alcohol',cat:'Consumo de sustancias',l:'Consumo de alcohol',d:'Frecuencia?'},
+  {id:'sus_tabaco',cat:'Consumo de sustancias',l:'Tabaquismo',d:'Cigarrillos/dia? Anos?'},
+  {id:'sus_marihuana',cat:'Consumo de sustancias',l:'Consumo de marihuana',d:'Frecuencia?'},
+  {id:'sus_cocaina',cat:'Consumo de sustancias',l:'Consumo de cocaina',d:'Frecuencia?'},
+  {id:'sus_benzo',cat:'Consumo de sustancias',l:'Uso de benzodiacepinas (ej. clonazepam)',d:'Cual? Dosis?'},
+  {id:'sus_otras',cat:'Consumo de sustancias',l:'Otras sustancias',d:'Cual?'}
 ];
+function getCustomQuestions(){try{return JSON.parse(localStorage.getItem('dn_custom_questions')||'[]');}catch(e){return[];}}
+function getRemovedQuestions(){try{return JSON.parse(localStorage.getItem('dn_removed_questions')||'[]');}catch(e){return[];}}
+function buildConds(){const removed=getRemovedQuestions();return[...CONDS_BASE,...getCustomQuestions()].filter(c=>!removed.includes(c.id));}
+let CONDS=buildConds();
+function agregarPregunta(){
+  const inp=document.getElementById('nuevaPregunta');const txt=inp.value.trim();if(!txt)return;
+  const custom=getCustomQuestions();const id='custom_'+Date.now();
+  custom.push({id,cat:'Personalizadas',l:txt,d:'Detalle'});
+  localStorage.setItem('dn_custom_questions',JSON.stringify(custom));
+  inp.value='';CONDS=buildConds();renderConds();
+}
+function eliminarPregunta(id){
+  if(!confirm('Quitar esta pregunta guia del cuestionario?'))return;
+  const removed=getRemovedQuestions();if(!removed.includes(id))removed.push(id);
+  localStorage.setItem('dn_removed_questions',JSON.stringify(removed));
+  const custom=getCustomQuestions().filter(c=>c.id!==id);localStorage.setItem('dn_custom_questions',JSON.stringify(custom));
+  delete condState[id];CONDS=buildConds();renderConds();
+}
 const CS=[{id:'resina',t:'Restauraciones con resina',tx:'Autorizo la realizacion de restauraciones con resina compuesta. Entiendo los beneficios, riesgos (sensibilidad, fractura, pigmentacion) y limitaciones. Conforme a NOM-004-SSA3-2012.'},{id:'limpieza',t:'Limpieza dental/Profilaxis',tx:'Autorizo la limpieza dental profesional. Puede haber sensibilidad transitoria y sangrado gingival leve.'},{id:'extraccion',t:'Extraccion quirurgica',tx:'Autorizo la extraccion del organo dental indicado. Riesgos: sangrado, inflamacion, infeccion, dolor postoperatorio, parestesia temporal o permanente.'},{id:'endodoncia',t:'Endodoncia (tratamiento de conductos)',tx:'Autorizo el tratamiento de conductos radiculares. Exito aproximado 95%. Se requiere restauracion definitiva en max. 15 dias.'},{id:'ortodoncia',t:'Ortodoncia',tx:'Autorizo el tratamiento de ortodoncia. Se requieren retenedores al finalizar. Riesgos: reabsorcion radicular, caries por higiene inadecuada.'},{id:'carillas_resina',t:'Carillas de resina',tx:'Autorizo carillas de resina compuesta. No son permanentes, requieren mantenimiento periodico.'},{id:'carillas_emax',t:'Carillas de ceramica E-max',tx:'Autorizo carillas E-max. La preparacion dental es en la mayoria de los casos irreversible.'},{id:'corona',t:'Corona/Protesis fija',tx:'Autorizo la colocacion de corona o protesis fija. Duracion depende del cuidado y la higiene oral.'},{id:'protesis_rem',t:'Protesis removible',tx:'Autorizo la elaboracion y colocacion de protesis removible. Requiere periodo de adaptacion y ajustes periodicos.'},{id:'blanqueamiento',t:'Blanqueamiento dental',tx:'Autorizo la aplicacion de agentes blanqueadores. El resultado no es permanente y no modifica el color de restauraciones existentes.'},{id:'botox',t:'Toxina botulinica (Botox/Bruxismo)',tx:'Autorizo la aplicacion de toxina botulinica tipo A. El efecto es temporal (3-6 meses) y se requieren aplicaciones periodicas.'},{id:'cirugia',t:'Cirugia oral',tx:'Autorizo el procedimiento quirurgico indicado. Riesgos: sangrado, infeccion, inflamacion, parestesia.'},
 {id:'frenectomia_lingual',t:'Frenilectomia lingual',tx:'Autorizo la frenectomia (liberacion quirurgica) del frenillo lingual para corregir anquiloglosia o restriccion de movimiento lingual. Beneficios: mejora del habla, deglucion e higiene oral. Riesgos: sangrado, dolor, inflamacion, infeccion, cicatrizacion anomala, recidiva parcial que puede requerir segunda intervencion, lesion transitoria de conductos salivales. Alternativas: no tratar, terapia miofuncional sin cirugia en casos leves. Se requieren ejercicios miofuncionales postoperatorios.'},
 {id:'frenectomia_labial',t:'Frenilectomia labial',tx:'Autorizo la frenectomia del frenillo labial (superior y/o inferior) para eliminar tension excesiva sobre la encia o corregir diastema. Beneficios: reduccion de tension gingival, mejora estetica, prevencion de recesion progresiva. Riesgos: sangrado, dolor, inflamacion, infeccion, cicatriz visible, recidiva parcial. Alternativas: no tratar, ortodoncia previa en casos de diastema.'},
@@ -718,15 +1175,42 @@ function parseAIJson(raw){
   }
   throw lastErr;
 }
-async function callGeminiProxy(promptText,generationConfig){
-  const code=getKey();
-  if(!code)throw new Error('CODE_MISSING');
-  return fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,prompt:promptText,generationConfig})});
+async function fetchAndParseJson(promptText,generationConfig){
+  async function intento(){
+    const res=await callGeminiProxy(promptText,generationConfig);
+    const data=await res.json();if(data.error)throw new Error(data.error.message);
+    const raw=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    return parseAIJson(raw);
+  }
+  try{return await intento();}
+  catch(e1){return await intento();} // reintento automatico si la IA devuelve JSON malformado o hay un error transitorio
 }
+async function callGeminiProxy(promptText,generationConfig){
+  const apiKey=getKey();
+  if(!apiKey)throw new Error('CODE_MISSING');
+  // Limpiar configuración incompatible con llamada directa
+  const cfg={...generationConfig};
+  delete cfg.thinkingConfig;
+  const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GM+':generateContent?key='+apiKey,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contents:[{parts:[{text:promptText}]}],generationConfig:cfg})
+  });
+  // Simular misma interfaz que antes — retorna objeto con .json()
+  const data=await res.json();
+  if(data.error)throw new Error(data.error.message);
+  // Envolver en objeto compatible
+  return {
+    json:async()=>data,
+    candidates:data.candidates,
+    ok:true
+  };
+}
+function tituloProfesional(){return getModo()==='medico'?'Medico Cirujano':'Cirujano Dentista';}
 function getDoctorInfo(){
   const d=JSON.parse(localStorage.getItem('dn_doctor')||'{}');
   return{
-    nombre:d.nombre||'C.D. (configura tu nombre)',
+    nombre:d.nombre||(tituloProfesional()+' (configura tu nombre)'),
     cedula:d.cedula||'(configura tu cedula)',
     universidad:d.universidad||'',
     direccion:d.direccion||'(configura la direccion de tu consultorio)',
@@ -796,21 +1280,51 @@ function tQS(sid,aid){const s=document.getElementById(sid),a=document.getElement
 document.getElementById('patientSex').addEventListener('change',()=>{document.getElementById('qGineco').style.display=document.getElementById('patientSex').value==='Femenino'?'block':'none';});
 
 function renderConds(){
+  const prevDetails={};CONDS.forEach(c=>{const inp=document.getElementById('cv-'+c.id);if(inp&&inp.value)prevDetails[c.id]=inp.value;});
   let lastCat=null,out='';
   CONDS.forEach(c=>{
     if(c.cat!==lastCat){out+='<div class="cond-cat-title">'+c.cat+'</div>';lastCat=c.cat;}
-    out+='<div class="cond-item" id="ci-'+c.id+'"><div class="cond-top"><div class="cond-name" id="cn-'+c.id+'">'+c.l+'</div><div class="toggle-row"><button class="tbtn" onclick="setCond(\''+c.id+'\',true)" id="by-'+c.id+'">Si</button><button class="tbtn an" onclick="setCond(\''+c.id+'\',false)" id="bn-'+c.id+'">No</button></div></div><div class="cond-detail" id="cd-'+c.id+'" style="display:none;"><input type="text" placeholder="'+c.d+'" id="cv-'+c.id+'" oninput="updAlerts()"></div></div>';
+    out+='<div class="cond-item" id="ci-'+c.id+'"><div class="cond-top"><div class="cond-name" id="cn-'+c.id+'">'+c.l+'</div><div class="toggle-row"><button class="tbtn" onclick="setCond(\''+c.id+'\',true)" id="by-'+c.id+'">Si</button><button class="tbtn an" onclick="setCond(\''+c.id+'\',false)" id="bn-'+c.id+'">No</button><button class="tbtn" title="Quitar del cuestionario" onclick="eliminarPregunta(\''+c.id+'\')" style="color:var(--ro);">&times;</button></div></div><div class="cond-detail" id="cd-'+c.id+'" style="display:none;"><input type="text" placeholder="'+c.d+'" id="cv-'+c.id+'" oninput="updAlerts()"></div></div>';
   });
   document.getElementById('condGrid').innerHTML=out;
+  CONDS.forEach(c=>{if(prevDetails[c.id]){const inp=document.getElementById('cv-'+c.id);if(inp)inp.value=prevDetails[c.id];}if(condState[c.id])setCond(c.id,true);});
+  renderCondResumen();
+}
+function renderCondResumen(){
+  const el=document.getElementById('condResumen');if(!el)return;
+  const positivos=CONDS.filter(c=>condState[c.id]);
+  if(!positivos.length){el.innerHTML='<div style="font-size:11px;color:var(--ts);padding:4px 0;">Sin hallazgos positivos registrados en el interrogatorio.</div>';return;}
+  el.innerHTML='<div style="font-size:11px;font-weight:600;color:var(--vo);margin-bottom:4px;">Lo que el paciente SI tiene:</div>'+positivos.map(c=>{const dv=document.getElementById('cv-'+c.id)?.value||'';return '<span class="pill pt" style="margin:0 4px 4px 0;">'+c.l+(dv?': '+dv:'')+'</span>';}).join('');
 }
 renderConds();
 
 function setCond(id,v){condState[id]=v;const item=document.getElementById('ci-'+id),name=document.getElementById('cn-'+id),det=document.getElementById('cd-'+id),bY=document.getElementById('by-'+id),bN=document.getElementById('bn-'+id);if(v){item.classList.add('yes');name.classList.add('yes');det.style.display='block';bY.classList.add('ay');bN.classList.remove('an');}else{item.classList.remove('yes');name.classList.remove('yes');det.style.display='none';bY.classList.remove('ay');bN.classList.add('an');}updAlerts();}
 
+function sugerenciasAlergia(alg){
+  if(!alg||!alg.trim()||typeof MEDS_DB==='undefined')return[];
+  const n=normTxt(alg);const out=[];const vistos=new Set();
+  Object.keys(ALERGIA_KEYWORDS).forEach(clase=>{
+    if(!ALERGIA_KEYWORDS[clase].some(k=>n.includes(k)))return;
+    MEDS_DB.filter(m=>m.clase===clase&&m.alternativa&&m.alternativa!=='-').forEach(m=>{
+      const altNombre=m.alternativa.split(' (')[0];
+      if(vistos.has(altNombre))return;vistos.add(altNombre);
+      const altMed=MEDS_DB.find(x=>x.nombre===altNombre);
+      out.push(altMed?('Alergia a <strong>'+clase+'</strong> \u2192 usar <strong>'+altMed.nombre+'</strong>: '+altMed.dosisAdulto+', por '+altMed.duracion+'.'):('Alergia a <strong>'+clase+'</strong> \u2192 '+m.alternativa+'.'));
+    });
+  });
+  if(/latex/.test(n))out.push('Alergia a <strong>l\u00e1tex</strong> \u2192 usar guantes e instrumental libres de l\u00e1tex.');
+  if(/sulfito/.test(n))out.push('Sensibilidad a <strong>sulfitos</strong> \u2192 evitar anest\u00e9sicos con vasoconstrictor (epinefrina); usar Mepivaca\u00edna al 3% sin vasoconstrictor.');
+  return out;
+}
 function updAlerts(){
   const al=[],pi=[];
   const alg=document.getElementById('antAlergias').value||(condState['alergias']?document.getElementById('cv-alergias')?.value:'');
-  if(condState['alergias']&&alg){al.push('Alergia: '+alg);if(/penicilina/i.test(alg)){pi.push({t:'pt',tx:'\u2192 Clindamicina 300mg'});pi.push({t:'pt',tx:'\u2192 Azitromicina 500mg'});}if(/aine|ibuprofeno/i.test(alg))pi.push({t:'pa',tx:'Paracetamol (evitar AINEs)'});if(/sulfito/i.test(alg))pi.push({t:'pr',tx:'Evitar anestesicos con epinefrina'});}
+  const sugBox=document.getElementById('alergiaSugerencia');
+  if(sugBox){
+    const sugs=sugerenciasAlergia(alg);
+    sugBox.innerHTML=sugs.length?'<div style="background:#fdf0ee;border:1px solid #f5c4b3;border-radius:6px;padding:6px 9px;margin-top:5px;font-size:10.5px;color:#8a3a2f;">'+sugs.map(s=>'<div style="margin-bottom:2px;">&#x1F916; '+s+'</div>').join('')+'<div style="font-size:9px;color:var(--ts);margin-top:2px;">Sugerencia orientativa &mdash; confirma antes de usarla en la receta.</div></div>':'';
+  }
+  if(condState['alergias']&&alg){al.push('Alergia: '+alg);const sugs2=sugerenciasAlergia(alg);sugs2.forEach(s=>pi.push({t:'pt',tx:'\u2192 '+s.replace(/<\/?strong>/g,'')}));}
   if(condState['embarazo']){al.push('Embarazo');pi.push({t:'pr',tx:'Precaucion en cirugias'});pi.push({t:'pa',tx:'Lidocaina - dosis minima'});}
   if(condState['lactancia']){al.push('Lactancia');pi.push({t:'pa',tx:'Evitar tetraciclinas'});}
   if(condState['diabetes']){al.push('Diabetes');pi.push({t:'pa',tx:'Monitorear glucemia'});}
@@ -818,6 +1332,7 @@ function updAlerts(){
   if(condState['tiroides']){al.push('Tiroides');pi.push({t:'pa',tx:'Limitar epinefrina'});}
   if(condState['coagulacion']){al.push('Coagulacion');pi.push({t:'pr',tx:'Precaucion en cirugias'});}
   if(condState['osteoporosis']){al.push('Bifosfonatos');pi.push({t:'pr',tx:'Riesgo ONM'});}
+  renderCondResumen();
   const b=document.getElementById('alertBanner');
   if(al.length>0){b.style.display='block';document.getElementById('alertTitle').textContent='Alertas: '+al.join(' - ');document.getElementById('alertPills').innerHTML=pi.map(p=>'<span class="pill '+p.t+'">'+p.tx+'</span>').join('');}else b.style.display='none';
   calcAnes();
@@ -837,11 +1352,7 @@ async function buscarMed(){
   document.getElementById('loadMed').classList.add('show');document.getElementById('medRes').innerHTML='';
   const p='Eres experto farmacologico dental en Mexico. Responde UNICAMENTE con JSON valido, sin texto adicional, sin markdown, sin comentarios.\nMedicamento consultado: '+q+'\nJSON requerido: {"medicamento":"nombre generico","presentaciones":["Presentacion 1","Presentacion 2"],"dosis_dental":"descripcion de dosis","precio_aprox":"rango en pesos MXN","contraindicaciones":"principales contraindicaciones","interacciones":"interacciones con anestesicos locales","alternativas":["alternativa1","alternativa2"],"nota":"nota clinica importante o cadena vacia"}';
   try{
-    const r=await callGeminiProxy(p,{temperature:0.1,maxOutputTokens:600,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0}});
-    const d=await r.json();if(d.error)throw new Error(d.error.message);
-    let raw=d.candidates[0].content.parts[0].text||'';
-    raw=raw.trim().replace(/```json|```/g,'').trim();
-    const m=parseAIJson(raw);
+    const m=await fetchAndParseJson(p,{temperature:0.1,maxOutputTokens:600,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0}});
     document.getElementById('medRes').innerHTML='<div class="med-item"><div class="med-name">'+(m.medicamento||q)+'</div><div class="med-detail"><strong>Presentaciones:</strong> '+(m.presentaciones||[]).join(', ')+'</div><div class="med-detail"><strong>Dosis dental:</strong> '+(m.dosis_dental||'-')+'</div><div class="med-detail"><strong>Precio aprox.:</strong> '+(m.precio_aprox||'-')+'</div><div class="med-detail"><strong>Contraindicaciones:</strong> '+(m.contraindicaciones||'-')+'</div><div class="med-detail"><strong>Interacciones:</strong> '+(m.interacciones||'-')+'</div>'+(m.alternativas?.length?'<div class="med-detail"><strong>Alternativas:</strong> '+m.alternativas.join(', ')+'</div>':'')+(m.nota?'<div class="med-detail" style="color:var(--ro);">'+m.nota+'</div>':'')+'</div>';
   }catch(e){document.getElementById('medRes').innerHTML='<div style="font-size:11px;color:var(--ro);">Error: '+e.message+'</div>';}
   finally{document.getElementById('loadMed').classList.remove('show');}
@@ -864,15 +1375,16 @@ document.getElementById('generateBtn').addEventListener('click',async()=>{
   const pN=document.getElementById('patientName').value||'Paciente',pA=document.getElementById('patientAge').value,pS=document.getElementById('patientSex').value,vT=document.getElementById('visitType').value;
   document.getElementById('loadingMsg').classList.add('show');document.getElementById('generateBtn').disabled=true;
   const condListStr=CONDS.map(c=>c.id+'='+c.l+(c.cat?' ('+c.cat+')':'')).join('; ');
-  const p1='Eres asistente clinico dental Mexico NOM-004-SSA3-2012. Responde UNICAMENTE con JSON valido, sin texto adicional.\nPACIENTE: '+pN+(pA?', '+pA:'')+(pS?', '+pS:'')+'. TIPO: '+vT+'\nTRANSCRIPCION DEL DICTADO: '+transcript+'\nREGLAS: Diagnostico y plan SIEMPRE completos. Indicaciones especificas segun procedimientos. Para odontograma especifica cara afectada (O,V,P,M,D), puede haber multiples hallazgos por diente.\nPara "interrogatorio": evalua CADA UNO de estos ids del interrogatorio clinico dirigido segun lo que el dentista o paciente mencionaron en el dictado: '+condListStr+'. Solo incluye en el arreglo los ids donde presente=true (el paciente confirmo padecerlo) o donde se menciono explicitamente que NO lo padece (presente=false); si un id no se menciono en absoluto, NO lo incluyas en el arreglo. Si se dio detalle (tipo, control, parentesco, frecuencia, medicamento) inclúyelo breve en "detalle".\nPara "riesgo_cariogenico" (bajo/alto): marca alto si hay consumo frecuente de azucar/harinas, mala higiene (poco cepillado, no usa hilo), xerostomia, aparatologia ortodoncica, o caries activas multiples mencionadas; si no hay estos factores marca bajo.\nPara "riesgo_periodontal" (bajo/alto): marca alto si hay sangrado gingival, movilidad dental, tabaquismo, diabetes no controlada, mala higiene, o antecedentes de enfermedad periodontal; si no hay estos factores marca bajo.\nJSON requerido: {"soap":{"motivo_consulta":"texto","subjetivo":"texto","objetivo":"texto","diagnostico":"Sugerido: texto","plan":["item1"],"indicaciones":["item1"],"proxima_cita":"texto"},"antecedentes":{"heredofamiliares":"texto","sistemicos":"texto","alergias":"texto","medicamentos":"texto","cirugias":"texto","no_patologicos":"texto","gineco":"texto","dental_previo":"texto"},"interrogatorio":[{"id":"diabetes","presente":true,"detalle":"texto breve o vacio"}],"riesgo_cariogenico":"bajo","riesgo_periodontal":"bajo","odontograma":[{"diente":16,"cara":"O","hallazgo":"caries","nota":"texto"}]}';
+  const esMedico=getModo()==='medico';
+  const p1=esMedico?
+    ('Eres asistente clinico medico Mexico NOM-004-SSA3-2012. Responde UNICAMENTE con JSON valido, sin texto adicional.\nPACIENTE: '+pN+(pA?', '+pA:'')+(pS?', '+pS:'')+'. TIPO: '+vT+'\nTRANSCRIPCION DEL DICTADO: '+transcript+'\nREGLAS: Diagnostico y plan SIEMPRE completos. Indicaciones especificas segun el padecimiento.\nPara "interrogatorio": evalua CADA UNO de estos ids del interrogatorio clinico dirigido segun lo que el medico o paciente mencionaron en el dictado: '+condListStr+'. Solo incluye en el arreglo los ids donde presente=true (el paciente confirmo padecerlo) o donde se menciono explicitamente que NO lo padece (presente=false); si un id no se menciono en absoluto, NO lo incluyas en el arreglo. Si se dio detalle inclúyelo breve en "detalle".\nJSON requerido: {"soap":{"motivo_consulta":"texto","subjetivo":"texto","objetivo":"texto","diagnostico":"Sugerido: texto","plan":["item1"],"indicaciones":["item1"],"proxima_cita":"texto"},"antecedentes":{"heredofamiliares":"texto","sistemicos":"texto","alergias":"texto","medicamentos":"texto","cirugias":"texto","no_patologicos":"texto","gineco":"texto","dental_previo":""},"interrogatorio":[{"id":"diabetes","presente":true,"detalle":"texto breve o vacio"}]}')
+    :('Eres asistente clinico dental Mexico NOM-004-SSA3-2012. Responde UNICAMENTE con JSON valido, sin texto adicional.\nPACIENTE: '+pN+(pA?', '+pA:'')+(pS?', '+pS:'')+'. TIPO: '+vT+'\nTRANSCRIPCION DEL DICTADO: '+transcript+'\nREGLAS: Diagnostico y plan SIEMPRE completos. Indicaciones especificas segun procedimientos. Para odontograma especifica cara afectada (O,V,P,M,D), puede haber multiples hallazgos por diente.\nPara "interrogatorio": evalua CADA UNO de estos ids del interrogatorio clinico dirigido segun lo que el dentista o paciente mencionaron en el dictado: '+condListStr+'. Solo incluye en el arreglo los ids donde presente=true (el paciente confirmo padecerlo) o donde se menciono explicitamente que NO lo padece (presente=false); si un id no se menciono en absoluto, NO lo incluyas en el arreglo. Si se dio detalle (tipo, control, parentesco, frecuencia, medicamento) inclúyelo breve en "detalle".\nPara "riesgo_cariogenico" (bajo/alto): marca alto si hay consumo frecuente de azucar/harinas, mala higiene (poco cepillado, no usa hilo), xerostomia, aparatologia ortodoncica, o caries activas multiples mencionadas; si no hay estos factores marca bajo.\nPara "riesgo_periodontal" (bajo/alto): marca alto si hay sangrado gingival, movilidad dental, tabaquismo, diabetes no controlada, mala higiene, o antecedentes de enfermedad periodontal; si no hay estos factores marca bajo.\nJSON requerido: {"soap":{"motivo_consulta":"texto","subjetivo":"texto","objetivo":"texto","diagnostico":"Sugerido: texto","plan":["item1"],"indicaciones":["item1"],"proxima_cita":"texto"},"antecedentes":{"heredofamiliares":"texto","sistemicos":"texto","alergias":"texto","medicamentos":"texto","cirugias":"texto","no_patologicos":"texto","gineco":"texto","dental_previo":"texto"},"interrogatorio":[{"id":"diabetes","presente":true,"detalle":"texto breve o vacio"}],"riesgo_cariogenico":"bajo","riesgo_periodontal":"bajo","odontograma":[{"diente":16,"cara":"O","hallazgo":"caries","nota":"texto"}]}');
   const p2='Eres asistente dental en Acapulco Mexico. Responde UNICAMENTE con JSON valido, sin texto adicional. Precios realistas MXN 2025.\nDICTADO: '+transcript+'\nJSON requerido: {"presupuesto":[{"procedimiento":"nombre","descripcion":"breve","precio":1500,"cantidad":1}]}';
   try{
-    const[r1,r2]=await Promise.all([callGeminiProxy(p1,{temperature:0.2,maxOutputTokens:8000,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0}}),callGeminiProxy(p2,{temperature:0.2,maxOutputTokens:3000,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0}})]);
-    const[d1,d2]=await Promise.all([r1.json(),r2.json()]);
-    if(d1.error)throw new Error(d1.error.message);
-    const pJ=parseAIJson;
-    const res1=pJ(d1.candidates[0].content.parts[0].text);
-    let res2={presupuesto:[]};if(d2.candidates?.[0]?.content?.parts?.[0]?.text){try{res2=pJ(d2.candidates[0].content.parts[0].text);}catch(e){}}
+    const[res1,res2]=await Promise.all([
+      fetchAndParseJson(p1,{temperature:0.2,maxOutputTokens:8000,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0}}),
+      fetchAndParseJson(p2,{temperature:0.2,maxOutputTokens:3000,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0}}).catch(()=>({presupuesto:[]}))
+    ]);
     const soap=res1.soap||{};
     const ea=v=>Array.isArray(v)?v:(v?[v]:[]);const fb=(v,m)=>(v&&String(v).trim()&&v!=='undefined')?v:m;
     soap.plan=ea(soap.plan);soap.indicaciones=ea(soap.indicaciones);
@@ -900,34 +1412,62 @@ document.getElementById('generateBtn').addEventListener('click',async()=>{
     if(res1.riesgo_periodontal==='bajo'||res1.riesgo_periodontal==='alto')setRiesgo('perio',res1.riesgo_periodontal);
     odoData={};
     (res1.odontograma||[]).forEach(h=>{if(!h||!h.diente)return;const num=h.diente,cara=(h.cara||'O').toUpperCase(),hallazgo=h.hallazgo||'caries';if(!odoData[num])odoData[num]={notas:[]};odoData[num][cara]=hallazgo;if(h.nota){if(!odoData[num].notas)odoData[num].notas=[];odoData[num].notas.push({cara,hallazgo,nota:h.nota,fecha:new Date().toLocaleDateString('es-MX')});}});
-    bgtItems=(res2.presupuesto||[]).map((b,i)=>({...b,id:i,precio:Number(b.precio)||0,cantidad:Number(b.cantidad)||1}));
+    bgtItems=(res2.presupuesto||[]).map((b,i)=>({...b,id:i,precio:Number(b.precio)||0,cantidad:Number(b.cantidad)||1,costoLab:0}));
     curNote={soap,patientName:pN,patientAge:pA,patientSex:pS,visitType:vT,patientDob:document.getElementById('patientDob').value,patientCivil:document.getElementById('patientCivil').value,patientJob:document.getElementById('patientJob').value,patientPhone:document.getElementById('patientPhone').value,patientEmail:document.getElementById('patientEmail').value,patientAddress:document.getElementById('patientAddress').value,patientEmergency:document.getElementById('patientEmergency').value,antHF:document.getElementById('antHF').value,antSis:document.getElementById('antSis').value,antAlergias:document.getElementById('antAlergias').value,antMeds:document.getElementById('antMeds').value,vitales:{PA:document.getElementById('vPA').value,FC:document.getElementById('vFC').value,FR:document.getElementById('vFR').value,Temp:document.getElementById('vTemp').value,Peso:document.getElementById('vPeso').value,Talla:document.getElementById('vTalla').value,IMC:document.getElementById('vIMC').value,Sat:document.getElementById('vSat').value},condiciones:{...condState},expNumber:getNextExp(),date:new Date().toISOString(),transcript};
     document.getElementById('sMotivo').textContent=soap.motivo_consulta;document.getElementById('sSubjetivo').textContent=soap.subjetivo;document.getElementById('sObjetivo').textContent=soap.objetivo;document.getElementById('sDiag').textContent=soap.diagnostico;
+    window._baseObjS=soap.objetivo;anesRegistros=[];renderAnesRegistros();
     document.getElementById('sPlan').innerHTML=soap.plan.map(p=>'<li>'+p+'</li>').join('');document.getElementById('sIndic').innerHTML=soap.indicaciones.map(i=>'<li>'+i+'</li>').join('');document.getElementById('sProxima').textContent=soap.proxima_cita;
     renderOdo();renderBgt();calcAnes();
-    document.querySelector('[data-panel="t2"]').classList.add('done');goTab('t3');
+    detectarConsentimientoVoz(transcript);
+    document.querySelector('[data-panel="t2"]').classList.add('done');goTab(esMedico?'t4':'t3');
   }catch(err){alert('Error: '+err.message);}
   finally{document.getElementById('loadingMsg').classList.remove('show');document.getElementById('generateBtn').disabled=false;}
 });
 
-function getCaraC(data,num,cara){const d=data[num];if(!d||!d[cara])return H.sano.c;return H[d[cara]]?.c||H.sano.c;}
+function detectarConsentimientoVoz(transcript){
+  const n=normTxt(transcript||'');
+  const el=document.getElementById('consentVozBadge');if(!el)return;
+  const hit=/declaro|autorizo|acepto|es verdad|es real|estoy de acuerdo/.test(n);
+  if(hit){
+    const hora=new Date().toLocaleString('es-MX',{dateStyle:'short',timeStyle:'short'});
+    el.innerHTML='<div style="background:#e0f5f0;border-radius:6px;padding:6px 9px;font-size:11px;color:#1D9E75;font-weight:600;">&#x2713; Consentimiento verbal detectado en el dictado &mdash; '+hora+'</div>';
+    window._consentimientoVoz={detectado:true,hora};
+    const cb=document.querySelectorAll('#t6 input[type="checkbox"]')[2];if(cb)cb.checked=true;
+  }else{
+    el.innerHTML='<div style="background:#fdf0ee;border-radius:6px;padding:6px 9px;font-size:11px;color:var(--ro);">No se detect&#xF3; el consentimiento verbal en el dictado. Pide al paciente que lo diga y vuelve a generar, o usa la firma digital en Consentimientos.</div>';
+    window._consentimientoVoz={detectado:false};
+  }
+}
+function getCaraC(data,num,cara){const d=data[num];if(!d||!d[cara])return H.sano.c;const h=d[cara];if(h==='corona'||h==='protesis')return H.sano.c;return H[h]?.c||H.sano.c;}
+function getCaraBorder(data,num,cara,sc){const d=data[num];if(!d||!d[cara])return sc;return H[d[cara]]?.border||sc;}
 function drawTooth(num,cx,cy,sz,isInf,data){
   const io=sz*0.26,oo=sz/2,sc='#aaa9a2',sw=0.7;
   const d=data[num];
   const isAus=d&&Object.values(d).some(v=>v==='ausente');
-  if(isAus)return '<g class="tooth-g" data-num="'+num+'" data-mode="'+(data===odoData?'adult':'ped')+'" style="cursor:pointer"><rect x="'+(cx-oo)+'" y="'+(cy-oo)+'" width="'+sz+'" height="'+sz+'" rx="3" fill="#f1efe8" stroke="'+sc+'" stroke-width="'+sw+'"/><line x1="'+(cx-oo+3)+'" y1="'+(cy-oo+3)+'" x2="'+(cx+oo-3)+'" y2="'+(cy+oo-3)+'" stroke="#888780" stroke-width="1.5"/><line x1="'+(cx+oo-3)+'" y1="'+(cy-oo+3)+'" x2="'+(cx-oo+3)+'" y2="'+(cy+oo-3)+'" stroke="#888780" stroke-width="1.5"/><text x="'+cx+'" y="'+(isInf?cy+oo+11:cy-oo-5)+'" text-anchor="middle" font-size="8" fill="#888780">'+num+'</text></g>';
+  const isRR=d&&Object.values(d).some(v=>v==='resto_radicular');
+  const notaTxt=((d&&d.notas)||[]).map(n=>n.nota||'').join(' ').toLowerCase();
+  const isPilar=notaTxt.includes('pilar'),isPontico=notaTxt.includes('pontico')||notaTxt.includes('p\u00f3ntico');
+  const labelY=isInf?cy+oo+11:cy-oo-5;
+  const subLabelY=isInf?cy+oo+20:cy-oo-13;
+  if(isAus)return '<g class="tooth-g" data-num="'+num+'" data-mode="'+(data===odoData?'adult':'ped')+'" style="cursor:pointer"><rect x="'+(cx-oo)+'" y="'+(cy-oo)+'" width="'+sz+'" height="'+sz+'" rx="3" fill="#f1efe8" stroke="'+sc+'" stroke-width="'+sw+'"/><line x1="'+(cx-oo+3)+'" y1="'+(cy-oo+3)+'" x2="'+(cx+oo-3)+'" y2="'+(cy+oo-3)+'" stroke="#888780" stroke-width="1.5"/><line x1="'+(cx+oo-3)+'" y1="'+(cy-oo+3)+'" x2="'+(cx-oo+3)+'" y2="'+(cy+oo-3)+'" stroke="#888780" stroke-width="1.5"/><text x="'+cx+'" y="'+labelY+'" text-anchor="middle" font-size="8" fill="#888780">'+num+'</text><text x="'+cx+'" y="'+subLabelY+'" text-anchor="middle" font-size="5.5" fill="#888780">Ausencia clinica</text></g>';
+  if(isRR)return '<g class="tooth-g" data-num="'+num+'" data-mode="'+(data===odoData?'adult':'ped')+'" style="cursor:pointer"><path d="M'+cx+' '+(cy-oo*0.55)+' L'+(cx+oo*0.4)+' '+(cy+oo*0.6)+' L'+cx+' '+(cy+oo)+' L'+(cx-oo*0.4)+' '+(cy+oo*0.6)+' Z" fill="#f8f8f6" stroke="#9c6b3f" stroke-width="1.3"/><text x="'+cx+'" y="'+labelY+'" text-anchor="middle" font-size="8" fill="#888780">'+num+'</text><text x="'+cx+'" y="'+subLabelY+'" text-anchor="middle" font-size="5.5" fill="#9c6b3f">Resto radicular</text></g>';
   const TL=[cx-io,cy-io],TR=[cx+io,cy-io],BR=[cx+io,cy+io],BL=[cx-io,cy+io];
   const eTL=[cx-oo,cy-oo],eTR=[cx+oo,cy-oo],eBR=[cx+oo,cy+oo],eBL=[cx-oo,cy+oo];
-  const poly=(pts,fill)=>'<path d="'+pts.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ')+'Z" fill="'+fill+'" stroke="'+sc+'" stroke-width="'+sw+'" stroke-linejoin="round"/>';
-  const cV=getCaraC(data,num,isInf?'L':'V'),cL=getCaraC(data,num,isInf?'V':'P'),cM=getCaraC(data,num,'M'),cD=getCaraC(data,num,'D'),cO=getCaraC(data,num,'O');
-  let extra='';
+  const poly=(pts,fill,strokeOverride)=>'<path d="'+pts.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ')+'Z" fill="'+fill+'" stroke="'+(strokeOverride||sc)+'" stroke-width="'+(strokeOverride?1.6:sw)+'" stroke-linejoin="round"/>';
+  const faceV=isInf?'L':'V',faceL=isInf?'V':'P';
+  const cV=getCaraC(data,num,faceV),cL=getCaraC(data,num,faceL),cM=getCaraC(data,num,'M'),cD=getCaraC(data,num,'D'),cO=getCaraC(data,num,'O');
+  const bV=getCaraBorder(data,num,faceV,sc),bL=getCaraBorder(data,num,faceL,sc),bM=getCaraBorder(data,num,'M',sc),bD=getCaraBorder(data,num,'D',sc),bO=getCaraBorder(data,num,'O',sc);
+  let extra='',labels=[];
   const isFrac=d&&Object.values(d).some(v=>v==='fractura');
   const isMov=d&&Object.values(d).some(v=>v==='movilidad');
   const isEndo=d&&Object.values(d).some(v=>v==='endodoncia');
-  if(isFrac)extra+='<line x1="'+(cx-oo+2)+'" y1="'+(cy-oo+2)+'" x2="'+(cx+oo-2)+'" y2="'+(cy+oo-2)+'" stroke="#E24B4A" stroke-width="2.5" stroke-linecap="round"/>';
+  const isCorona=d&&Object.values(d).some(v=>v==='corona'||v==='protesis');
+  if(isFrac){extra+='<line x1="'+(cx-oo+2)+'" y1="'+(cy-oo+2)+'" x2="'+(cx+oo-2)+'" y2="'+(cy+oo-2)+'" stroke="#E24B4A" stroke-width="2.5" stroke-linecap="round"/>';labels.push('Fractura');}
   if(isMov)extra+='<text x="'+(cx-oo)+'" y="'+(cy+5)+'" font-size="13" fill="#E24B4A" font-weight="bold">(</text><text x="'+(cx+oo-7)+'" y="'+(cy+5)+'" font-size="13" fill="#E24B4A" font-weight="bold">)</text>';
   if(isEndo)extra+='<circle cx="'+cx+'" cy="'+(cy+oo-2)+'" r="3" fill="#1D9E75"/><line x1="'+cx+'" y1="'+(cy+oo+1)+'" x2="'+cx+'" y2="'+(cy+oo+9)+'" stroke="#1D9E75" stroke-width="2.5" stroke-linecap="round"/>';
-  return '<g class="tooth-g" data-num="'+num+'" data-mode="'+(data===odoData?'adult':'ped')+'" style="cursor:pointer">'+poly(isInf?[eBL,eBR,BR,BL]:[eTL,eTR,TR,TL],cV)+poly(isInf?[TL,TR,eTR,eTL]:[BL,BR,eBR,eBL],cL)+poly([TL,eTL,eBL,BL],cM)+poly([TR,eTR,eBR,BR],cD)+poly([TL,TR,BR,BL],cO)+extra+'<text x="'+cx+'" y="'+(isInf?cy+oo+11:cy-oo-5)+'" text-anchor="middle" font-size="8" fill="#888780">'+num+'</text></g>';
+  if(isCorona){extra+='<rect x="'+(cx-oo)+'" y="'+(cy-oo)+'" width="'+sz+'" height="'+sz+'" rx="3" fill="none" stroke="#FAC775" stroke-width="2"/>';labels.push(isPilar?'Corona (pilar)':isPontico?'Corona (p\u00f3ntico)':'Corona');}
+  const subLabel=labels.length?labels.join(' / '):'';
+  return '<g class="tooth-g" data-num="'+num+'" data-mode="'+(data===odoData?'adult':'ped')+'" style="cursor:pointer">'+poly(isInf?[eBL,eBR,BR,BL]:[eTL,eTR,TR,TL],cV,bV!==sc?bV:null)+poly(isInf?[TL,TR,eTR,eTL]:[BL,BR,eBR,eBL],cL,bL!==sc?bL:null)+poly([TL,eTL,eBL,BL],cM,bM!==sc?bM:null)+poly([TR,eTR,eBR,BR],cD,bD!==sc?bD:null)+poly([TL,TR,BR,BL],cO,bO!==sc?bO:null)+extra+'<text x="'+cx+'" y="'+labelY+'" text-anchor="middle" font-size="8" fill="#888780">'+num+'</text>'+(subLabel?'<text x="'+cx+'" y="'+subLabelY+'" text-anchor="middle" font-size="5.5" fill="#E24B4A">'+subLabel+'</text>':'')+'</g>';
 }
 function renderOdoSVG(sup,inf,data,contId,legId,sz,sx,supY,infY,vw,vh){
   const gap=4,step=sz+gap,midX=sx+sup.length/2*step;
@@ -961,18 +1501,25 @@ function setupVoiceOdo(ids,isPed,mode){
     const transcript=finalTx.trim();if(!transcript)return alert('No se detecto texto.');
     const apiKey=getKey();if(!apiKey)return alert('Configura tu codigo de acceso primero.');
     loadMsg.classList.add('show');genBtn.disabled=true;
-    let prompt;
+    let prompt,schema;
     if(mode==='placa'){
       prompt='Eres asistente dental Mexico. Responde UNICAMENTE con JSON valido, sin texto adicional.\nDICTADO DE CONTROL DE PLACA DENTOBACTERIANA (revelada con sustancia reveladora), notacion FDI: '+transcript+'\nREGLAS: Identifica que dientes y que superficies presentan placa visible. Superficies posibles UNICAMENTE: V=vestibular/facial, L=lingual/palatino, M=mesial, D=distal (NO incluyas oclusal).\nJSON requerido: {"placa":[{"diente":16,"superficies":["V","M"]}]}';
+      schema={type:'OBJECT',properties:{placa:{type:'ARRAY',items:{type:'OBJECT',properties:{diente:{type:'INTEGER'},superficies:{type:'ARRAY',items:{type:'STRING',enum:['V','L','M','D']}}},required:['diente','superficies']}}},required:['placa']};
     }else{
       const dientesRef=isPed?'dentici\u00f3n temporal (notaci\u00f3n FDI 55-51,61-65,85-81,71-75)':'dentici\u00f3n permanente (notaci\u00f3n FDI 11-18,21-28,31-38,41-48)';
-      prompt='Eres asistente clinico dental Mexico. Responde UNICAMENTE con JSON valido, sin texto adicional.\nDICTADO DE EXPLORACION INTRAORAL ('+dientesRef+'): '+transcript+'\nREGLAS: Identifica cada diente mencionado y su(s) cara(s) con hallazgo. Cara: O=oclusal,V=vestibular,P=palatino/lingual,M=mesial,D=distal. Hallazgos posibles: caries,obturado,amalgama,corona,protesis,endodoncia,endoposte,fractura,movilidad,ausente,implante,otro. Puede haber varios hallazgos por diente en distintas caras.\nJSON requerido: {"odontograma":[{"diente":16,"cara":"O","hallazgo":"caries","nota":"texto breve o vacio"}]}';
+      prompt='Eres asistente clinico dental Mexico. Responde UNICAMENTE con JSON valido, sin texto adicional.\nDICTADO DE EXPLORACION INTRAORAL ('+dientesRef+'): '+transcript+'\nREGLAS: Identifica cada diente mencionado y su(s) cara(s) con hallazgo. Cara: O=oclusal,V=vestibular,P=palatino/lingual,M=mesial,D=distal. Hallazgos posibles: caries,resina,resina_filtrada (resina con filtracion/caries recurrente),amalgama,amalgama_filtrada (amalgama con filtracion/caries recurrente),corona,protesis,carilla (solo va en cara V o P, la que se dicte),endodoncia,endoposte,fractura,movilidad,ausente,resto_radicular (solo queda la raiz, no hay corona clinica),implante,otro. Puede haber varios hallazgos por diente en distintas caras. Si el diente es pilar o pontico de puente, indicalo en "nota" con la palabra pilar o pontico.\nJSON requerido: {"odontograma":[{"diente":16,"cara":"O","hallazgo":"caries","nota":"texto breve o vacio"}]}';
+      schema={type:'OBJECT',properties:{odontograma:{type:'ARRAY',items:{type:'OBJECT',properties:{diente:{type:'INTEGER'},cara:{type:'STRING',enum:['O','V','P','M','D']},hallazgo:{type:'STRING',enum:['caries','resina','resina_filtrada','amalgama','amalgama_filtrada','corona','protesis','carilla','endodoncia','endoposte','fractura','movilidad','ausente','resto_radicular','implante','otro']},nota:{type:'STRING'}},required:['diente','cara','hallazgo']}}},required:['odontograma']};
     }
-    try{
-      const res=await callGeminiProxy(prompt,{temperature:0.2,maxOutputTokens:8000,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0}});
+    async function pedirIA(){
+      const res=await callGeminiProxy(prompt,{temperature:0.2,maxOutputTokens:8000,responseMimeType:'application/json',responseSchema:schema,thinkingConfig:{thinkingBudget:0}});
       const data=await res.json();if(data.error)throw new Error(data.error.message);
       const raw=data.candidates[0].content.parts[0].text||'';
-      const r=parseAIJson(raw);
+      return parseAIJson(raw);
+    }
+    try{
+      let r;
+      try{r=await pedirIA();}
+      catch(e1){r=await pedirIA();} // reintento automatico si la IA devuelve JSON malformado
       if(mode==='placa'){
         (r.placa||[]).forEach(it=>{if(!it||!it.diente)return;if(!plaqueData[it.diente])plaqueData[it.diente]={};(it.superficies||[]).forEach(s=>{const su=String(s).toUpperCase();if(PLSUP.includes(su))plaqueData[it.diente][su]=true;});});
         renderPlacaGrid();
@@ -1096,10 +1643,8 @@ document.getElementById('genBtnP').addEventListener('click',async()=>{
   document.getElementById('loadMsgP').classList.add('show');document.getElementById('genBtnP').disabled=true;
   const p='Eres asistente periodontal. Responde UNICAMENTE con JSON valido, sin texto adicional. Diagnostico segun clasificacion AAP/EFP 2017.\nDICTADO DEL SONDEO: '+transcript+'\nJSON requerido: {"sondeo":[{"diente":16,"MV":3,"V":2,"DV":4,"ML":3,"L":2,"DL":3,"sangrado":["MV"],"recesion":0,"furca":1,"nota":""}],"diagnostico":{"clasificacion":"Periodontitis estadio II grado B generalizada","descripcion":"texto descriptivo","plan":["raspado y alisado radicular"],"interconsulta":false}}';
   try{
-    const res=await callGeminiProxy(p,{temperature:0.1,maxOutputTokens:8000,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0}});
-    const data=await res.json();if(data.error)throw new Error(data.error.message);
-    let raw=data.candidates[0].content.parts[0].text.trim().replace(/```json|```/g,'').trim();
-    const result=parseAIJson(raw);perioData=result.sondeo||[];
+    const result=await fetchAndParseJson(p,{temperature:0.1,maxOutputTokens:8000,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0}});
+    perioData=result.sondeo||[];
     renderPerioTable(perioData);renderPerioDiag(result.diagnostico);
     renderPerioSVG(SUP,perioData,'perioSvgSup');renderPerioSVG(INF,perioData,'perioSvgInf');
     document.getElementById('perioSvgCard').style.display='block';
@@ -1160,12 +1705,25 @@ function renderPerioDiag(diag){if(!diag)return;document.getElementById('perioDia
 
 function renderBgt(){
   const total=bgtItems.reduce((s,b)=>s+b.precio*b.cantidad,0);
-  document.getElementById('bgtContent').innerHTML='<table class="bgt-table"><thead><tr><th>Procedimiento</th><th>Desc.</th><th>Cant.</th><th>Precio MXN</th><th>Subtotal</th><th></th></tr></thead><tbody id="bgtBody">'+bgtItems.map(bRow).join('')+'</tbody></table><div class="bgt-total">Total: <span id="bgtTotal">$'+total.toLocaleString('es-MX')+'</span> MXN</div><div style="margin-top:8px;"><button class="btn btn-s btn-sm" onclick="addBRow()">+ Agregar procedimiento</button></div>';
+  document.getElementById('bgtContent').innerHTML='<table class="bgt-table"><thead><tr><th>Procedimiento</th><th>Desc.</th><th>Cant.</th><th>Precio MXN</th><th>Subtotal</th><th></th></tr></thead><tbody id="bgtBody">'+bgtItems.map(bRow).join('')+'</tbody></table><div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;"><div style="font-size:12px;color:var(--ts);">Descuento:</div><input type="number" id="descPct" min="0" max="100" placeholder="0" style="width:70px;padding:5px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"> <span style="font-size:12px;color:var(--ts);">%</span><button class="btn btn-s btn-sm" onclick="aplicarDescuento()">Aplicar</button><span id="descDisplay" style="font-size:11px;color:var(--ro);font-weight:500;"></span></div><div class="bgt-total">Total: <span id="bgtTotal">$'+total.toLocaleString('es-MX')+'</span> MXN</div><div style="margin-top:8px;"><button class="btn btn-s btn-sm" onclick="addBRow()">+ Agregar procedimiento</button></div>';
+  renderCostosInternos();
 }
+function renderCostosInternos(){
+  const cont=document.getElementById('costosInternosContent');if(!cont)return;
+  const pct=(window._descuento&&window._descuento.pct)||0;
+  if(!bgtItems.length){cont.innerHTML='<div style="font-size:11px;color:var(--ts);">Agrega procedimientos en el presupuesto para ver aqu&#xED; tu ganancia neta.</div>';return;}
+  let netoTotal=0;
+  const rows=bgtItems.map(b=>{
+    const bruto=b.precio*b.cantidad,conDesc=bruto*(1-pct/100),lab=Number(b.costoLab)||0,neto=conDesc-lab;netoTotal+=neto;
+    return '<tr><td>'+b.procedimiento+'</td><td>$'+conDesc.toLocaleString('es-MX',{maximumFractionDigits:2})+'</td><td><input type="number" value="'+lab+'" min="0" placeholder="Agregar costo de laboratorio" style="width:110px;" onchange="updCostoLab('+b.id+',this.value)"></td><td style="font-weight:700;color:'+(neto>=0?'#1D9E75':'var(--ro)')+';">$'+neto.toLocaleString('es-MX',{maximumFractionDigits:2})+'</td></tr>';
+  }).join('');
+  cont.innerHTML='<table class="bgt-table"><thead><tr><th>Procedimiento</th><th>Precio al paciente'+(pct?' (-'+pct+'%)':'')+'</th><th>Costo laboratorio/especialista</th><th>Ganancia neta</th></tr></thead><tbody>'+rows+'</tbody></table><div class="bgt-total" style="margin-top:8px;">Ganancia neta total: <span style="color:'+(netoTotal>=0?'#1D9E75':'var(--ro)')+';">$'+netoTotal.toLocaleString('es-MX',{maximumFractionDigits:2})+'</span> MXN</div>';
+}
+function updCostoLab(id,v){const b=bgtItems.find(x=>x.id===id);if(!b)return;b.costoLab=Number(v)||0;renderCostosInternos();}
 function bRow(b){return '<tr id="br-'+b.id+'"><td><input type="text" value="'+b.procedimiento+'" onchange="updB('+b.id+',\'procedimiento\',this.value)" style="min-width:90px;"></td><td><input type="text" value="'+(b.descripcion||'')+'" onchange="updB('+b.id+',\'descripcion\',this.value)"></td><td><input type="number" value="'+b.cantidad+'" min="1" style="width:55px" onchange="updB('+b.id+',\'cantidad\',this.value)"></td><td><input type="number" value="'+b.precio+'" min="0" onchange="updB('+b.id+',\'precio\',this.value)"></td><td id="bsub-'+b.id+'">$'+(b.precio*b.cantidad).toLocaleString('es-MX')+'</td><td><button class="btn btn-d btn-sm" onclick="delB('+b.id+')">x</button></td></tr>';}
-function updB(id,f,v){const b=bgtItems.find(x=>x.id===id);if(!b)return;b[f]=(f==='precio'||f==='cantidad')?Number(v):v;const sub=document.getElementById('bsub-'+id);if(sub)sub.textContent='$'+(b.precio*b.cantidad).toLocaleString('es-MX');const total=bgtItems.reduce((s,x)=>s+x.precio*x.cantidad,0);const el=document.getElementById('bgtTotal');if(el)el.textContent='$'+total.toLocaleString('es-MX');}
-function addBRow(){const id=Date.now();bgtItems.push({id,procedimiento:'Nuevo procedimiento',descripcion:'',precio:0,cantidad:1});const tbody=document.getElementById('bgtBody');if(tbody)tbody.insertAdjacentHTML('beforeend',bRow(bgtItems[bgtItems.length-1]));}
-function delB(id){bgtItems=bgtItems.filter(b=>b.id!==id);const row=document.getElementById('br-'+id);if(row)row.remove();const total=bgtItems.reduce((s,x)=>s+x.precio*x.cantidad,0);const el=document.getElementById('bgtTotal');if(el)el.textContent='$'+total.toLocaleString('es-MX');}
+function updB(id,f,v){const b=bgtItems.find(x=>x.id===id);if(!b)return;b[f]=(f==='precio'||f==='cantidad')?Number(v):v;const sub=document.getElementById('bsub-'+id);if(sub)sub.textContent='$'+(b.precio*b.cantidad).toLocaleString('es-MX');const total=bgtItems.reduce((s,x)=>s+x.precio*x.cantidad,0);const el=document.getElementById('bgtTotal');if(el)el.textContent='$'+total.toLocaleString('es-MX');renderCostosInternos();}
+function addBRow(){const id=Date.now();bgtItems.push({id,procedimiento:'Nuevo procedimiento',descripcion:'',precio:0,cantidad:1,costoLab:0});const tbody=document.getElementById('bgtBody');if(tbody)tbody.insertAdjacentHTML('beforeend',bRow(bgtItems[bgtItems.length-1]));renderCostosInternos();}
+function delB(id){bgtItems=bgtItems.filter(b=>b.id!==id);const row=document.getElementById('br-'+id);if(row)row.remove();const total=bgtItems.reduce((s,x)=>s+x.precio*x.cantidad,0);const el=document.getElementById('bgtTotal');if(el)el.textContent='$'+total.toLocaleString('es-MX');renderCostosInternos();}
 renderBgt();
 window.addEventListener('DOMContentLoaded', () => renderCsList());
 
@@ -1290,6 +1848,34 @@ function printConsent(){
   pw.document.write(html);pw.document.close();
 }
 
+let anesRegistros=[];
+function addAnesRegistro(){
+  const farmaco=document.getElementById('anesFarmaco').value,tecnica=document.getElementById('anesTecnica').value,cartuchos=document.getElementById('anesCartuchos').value,sitio=document.getElementById('anesSitio').value.trim();
+  if(!sitio)return alert('Indica el sitio o diente(s) donde se aplico.');
+  anesRegistros.push({farmaco,tecnica,cartuchos,sitio,hora:new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})});
+  document.getElementById('anesCartuchos').value='';document.getElementById('anesSitio').value='';
+  renderAnesRegistros();
+  refrescarNarrativaAnesEnVista();
+}
+function refrescarNarrativaAnesEnVista(){
+  const narr=anesNarrativa();if(!narr)return;
+  [['sObjetivo','_baseObjS'],['eObjetivo','_baseObjE']].forEach(([id,baseKey])=>{
+    const el=document.getElementById(id);if(!el)return;
+    if(window[baseKey]===undefined)window[baseKey]=el.textContent&&el.textContent!=='\u2014'?el.textContent:'';
+    el.textContent=(window[baseKey]?window[baseKey]+' ':'')+narr;
+  });
+}
+function delAnesRegistro(i){anesRegistros.splice(i,1);renderAnesRegistros();}
+function anesNarrativa(){
+  if(!anesRegistros.length)return'';
+  return anesRegistros.map(a=>'Se administr\u00f3 anestesia local tipo '+a.farmaco+', t\u00e9cnica '+a.tecnica.toLowerCase()+(a.cartuchos?', '+a.cartuchos+' cartucho(s)':'')+', en '+a.sitio+' ('+a.hora+' hrs).').join(' ');
+}
+function renderAnesRegistros(){
+  const el=document.getElementById('anesRegistroList');if(!el)return;
+  if(!anesRegistros.length){el.innerHTML='<div style="font-size:11px;color:var(--ts);">Sin anestesico registrado en esta cita.</div>';return;}
+  el.innerHTML=anesRegistros.map((a,i)=>'<div style="background:var(--vc);border-radius:6px;padding:6px 9px;margin-bottom:5px;font-size:11px;display:flex;justify-content:space-between;gap:8px;"><span>'+a.farmaco+' &middot; '+a.tecnica+(a.cartuchos?' &middot; '+a.cartuchos+' cart.':'')+' &middot; '+a.sitio+'</span><button class="btn btn-d btn-sm" style="padding:1px 7px;" onclick="delAnesRegistro('+i+')">Quitar</button></div>').join('');
+}
+renderAnesRegistros();
 function getSOAP(){return{motivo_consulta:document.getElementById('sMotivo').textContent,subjetivo:document.getElementById('sSubjetivo').textContent,objetivo:document.getElementById('sObjetivo').textContent,diagnostico:document.getElementById('sDiag').textContent,plan:Array.from(document.getElementById('sPlan').querySelectorAll('li')).map(l=>l.textContent).filter(Boolean),indicaciones:Array.from(document.getElementById('sIndic').querySelectorAll('li')).map(l=>l.textContent).filter(Boolean),proxima_cita:document.getElementById('sProxima').textContent};}
 
 document.getElementById('saveBtn').addEventListener('click',()=>{
@@ -1300,9 +1886,11 @@ document.getElementById('saveBtn').addEventListener('click',()=>{
   if(!patients[key]){patients[key]={name:pN,age:curNote.patientAge,sex:curNote.patientSex,dob:curNote.patientDob,civil:curNote.patientCivil,job:curNote.patientJob,phone:curNote.patientPhone,email:curNote.patientEmail,address:curNote.patientAddress,emergency:curNote.patientEmergency,expNumber:curNote.expNumber,createdAt:new Date().toISOString(),consultas:[],pagos:[],odontoInicial:null,odontoEvolucion:null};}
   if(!patients[key].odontoInicial&&curNote.visitType==='primera_vez')patients[key].odontoInicial={data:JSON.parse(JSON.stringify(odoData)),fecha:new Date().toISOString()};
   patients[key].odontoEvolucion={data:JSON.parse(JSON.stringify(odoData)),fecha:new Date().toISOString()};
-  patients[key].consultas.unshift({id:Date.now(),date:curNote.date,visitType:curNote.visitType,soap,vitales:curNote.vitales,condiciones:curNote.condiciones,antHF:document.getElementById('antHF').value,antSis:document.getElementById('antSis').value,antAlergias:document.getElementById('antAlergias').value,antMeds:document.getElementById('antMeds').value,odontograma:JSON.parse(JSON.stringify(odoData)),presupuesto:JSON.parse(JSON.stringify(bgtItems)),perioData:JSON.parse(JSON.stringify(perioData)),controlPlaca:window._placaResult?{...window._placaResult,plaqueData:JSON.parse(JSON.stringify(plaqueData))}:null});
+  patients[key].consultas.unshift({id:Date.now(),date:curNote.date,visitType:curNote.visitType,soap,vitales:curNote.vitales,condiciones:curNote.condiciones,antHF:document.getElementById('antHF').value,antSis:document.getElementById('antSis').value,antAlergias:document.getElementById('antAlergias').value,antMeds:document.getElementById('antMeds').value,odontograma:JSON.parse(JSON.stringify(odoData)),presupuesto:JSON.parse(JSON.stringify(bgtItems)),perioData:JSON.parse(JSON.stringify(perioData)),anestesia:JSON.parse(JSON.stringify(anesRegistros)),controlPlaca:window._placaResult?{...window._placaResult,plaqueData:JSON.parse(JSON.stringify(plaqueData))}:null});
   if(window._placaResult&&window._placaResult.superficiesTotales>0){patients[key].proximoControlPlaca=window._placaResult.proximoControl;}
   localStorage.setItem('dn_patients',JSON.stringify(patients));
+  curNote.soap=soap;
+  anesRegistros=[];renderAnesRegistros();
   renderEvol(patients[key]);
   document.querySelector('[data-panel="t7"]').classList.add('done');
   const btn=document.getElementById('saveBtn');btn.textContent='Guardado';setTimeout(()=>{btn.textContent='Guardar expediente completo';updExp();},2000);
@@ -1327,12 +1915,9 @@ document.getElementById('genBtnE').addEventListener('click',async()=>{
   const pN=document.getElementById('patientName').value||'Paciente';
   const pA=document.getElementById('patientAge').value,pS=document.getElementById('patientSex').value;
   document.getElementById('loadMsgE').classList.add('show');document.getElementById('genBtnE').disabled=true;
-  const prompt='Eres asistente clinico dental Mexico. Responde UNICAMENTE con JSON valido, sin texto adicional.\nPACIENTE: '+pN+(pA?', '+pA:'')+(pS?', '+pS:'')+'\nDICTADO DEL PROCEDIMIENTO: '+transcript+'\nREGLAS: Extrae los dientes tratados hoy. Hallazgos: restauracion=obturado, endodoncia=endodoncia, extraccion=ausente, amalgama=amalgama, corona=corona, carilla=corona. Cara: O=oclusal,V=vestibular,P=palatino/lingual,M=mesial,D=distal.\nJSON requerido: {"soap":{"procedimiento":"descripcion","subjetivo":"sintomas","objetivo":"hallazgos","diagnostico":"diagnostico","indicaciones":["indicacion1"],"proxima_cita":"cuando"},"odontograma_actualizacion":[{"diente":36,"cara":"O","hallazgo":"obturado","nota":"nota"}],"medicamentos_sugeridos":[{"nombre":"Ibuprofeno 400mg","dosis":"1 tableta cada 8 horas","duracion":"3 dias","indicacion":"dolor postoperatorio"}]}';
+  const prompt='Eres asistente clinico dental Mexico. Responde UNICAMENTE con JSON valido, sin texto adicional.\nPACIENTE: '+pN+(pA?', '+pA:'')+(pS?', '+pS:'')+'\nDICTADO DEL PROCEDIMIENTO: '+transcript+'\nREGLAS: Extrae los dientes tratados hoy. Hallazgos: restauracion con resina=resina, endodoncia=endodoncia, extraccion=ausente, amalgama=amalgama, corona=corona, carilla=carilla, endoposte=endoposte. Cara: O=oclusal,V=vestibular,P=palatino/lingual,M=mesial,D=distal.\nJSON requerido: {"soap":{"procedimiento":"descripcion","subjetivo":"sintomas","objetivo":"hallazgos","diagnostico":"diagnostico","indicaciones":["indicacion1"],"proxima_cita":"cuando"},"odontograma_actualizacion":[{"diente":36,"cara":"O","hallazgo":"resina","nota":"nota"}],"medicamentos_sugeridos":[{"nombre":"Ibuprofeno 400mg","dosis":"1 tableta cada 8 horas","duracion":"3 dias","indicacion":"dolor postoperatorio"}]}';
   try{
-    const res=await callGeminiProxy(prompt,{temperature:0.2,maxOutputTokens:8000,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0}});
-    const data=await res.json();if(data.error)throw new Error(data.error.message);
-    let raw=data.candidates[0].content.parts[0].text.trim().replace(/```json|```/g,'').trim();
-    const r=parseAIJson(raw);
+    const r=await fetchAndParseJson(prompt,{temperature:0.2,maxOutputTokens:8000,responseMimeType:'application/json',thinkingConfig:{thinkingBudget:0}});
     const soap=r.soap||{};
     const ea=v=>Array.isArray(v)?v:(v?[v]:[]);
     soap.indicaciones=ea(soap.indicaciones);
@@ -1340,6 +1925,7 @@ document.getElementById('genBtnE').addEventListener('click',async()=>{
     document.getElementById('eMotivo').textContent=soap.procedimiento||'No especificado.';
     document.getElementById('eSubjetivo').textContent=soap.subjetivo||'No especificado.';
     document.getElementById('eObjetivo').textContent=soap.objetivo||'No especificado.';
+    window._baseObjE=soap.objetivo||'No especificado.';anesRegistros=[];renderAnesRegistros();
     document.getElementById('eDiag').textContent=soap.diagnostico||'No determinado.';
     document.getElementById('eIndic').innerHTML=soap.indicaciones.map(i=>'<li>'+i+'</li>').join('');
     document.getElementById('eProxima').textContent=soap.proxima_cita||'Por definir.';
@@ -1450,7 +2036,7 @@ function renderRxMeds(){
 document.getElementById('medDatalist').innerHTML=MEDS_DB.map(m=>'<option value="'+m.nombre+'">').join('');
 renderRxMeds();
 
-function imprimirReceta(){
+async function imprimirReceta(){
   if(!rxMeds.length){alert('Agrega al menos un medicamento.');return;}
   const pN=document.getElementById('rxPaciente').value||document.getElementById('patientName').value||'Paciente';
   const fecha=new Date(document.getElementById('rxFecha').value).toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'});
@@ -1458,8 +2044,15 @@ function imprimirReceta(){
   const diag=document.getElementById('rxDiag').value;
   const indic=document.getElementById('rxIndicaciones').value;
   const expNum=document.getElementById('expNumber').textContent;
+  let folioBox='';
+  try{
+    const{folio,payloadB64,sigB64,pubB64}=await firmarDocumento('receta',{paciente:pN,medicamentos:rxMeds.map(m=>m.nombre).join(', ')});
+    const url=urlVerificacion(folio,payloadB64,sigB64,pubB64);
+    const dataUrl=await qrDataUrl(url);
+    folioBox='<div style="text-align:center;margin-left:10px;"><img src="'+dataUrl+'" style="width:72px;height:72px;"><div style="font-size:6.5pt;color:#5a7068;margin-top:2px;">Folio '+folio+'</div></div>';
+  }catch(e){folioBox='';}
   const pw=window.open('','_blank');
-  pw.document.write('<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Receta - '+pN+'</title><style>@page{size:letter;margin:1.5cm}body{font-family:"Segoe UI",Arial,sans-serif;font-size:10pt;color:#1e2d2a;margin:0;}.hdr{border-bottom:3px solid #5db8a0;padding-bottom:10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-start;}.hdr-left h1{font-size:13pt;color:#2e8b72;margin:0 0 2px;}.hdr-left .sub{font-size:8pt;color:#5a7068;}.hdr-right{text-align:right;font-size:8.5pt;}.rx-symbol{font-size:28pt;color:#5db8a0;font-weight:700;margin:10px 0 6px;font-style:italic;}.pt-info{background:#e0f5f0;border-radius:6px;padding:8px 12px;margin-bottom:12px;display:flex;gap:20px;font-size:9.5pt;}.pt-label{color:#5a7068;font-size:8pt;display:block;}.diag{font-size:9.5pt;margin-bottom:12px;}.med-list{margin-bottom:14px;}.med-item{border-left:3px solid #5db8a0;padding:8px 12px;margin-bottom:10px;background:#f7faf9;}.med-name{font-size:11pt;font-weight:700;color:#1e2d2a;margin-bottom:3px;}.med-detail{font-size:9pt;color:#5a7068;}.indic{background:#fff8ec;border:1px solid #e8d4a0;border-radius:6px;padding:9px 12px;font-size:9pt;margin-bottom:14px;line-height:1.6;}.firma{margin-top:20px;display:flex;justify-content:flex-end;}.firma-block{text-align:center;width:220px;}.firma-line{border-top:1px solid #1e2d2a;margin-bottom:4px;margin-top:35px;}.footer{margin-top:12px;border-top:1px solid #c8e0da;padding-top:6px;font-size:7.5pt;color:#888;display:flex;justify-content:space-between;}</style></head><body>'+'<div class="hdr"><div class="hdr-left"><h1>'+getDoctorInfo().nombre+'</h1><div class="sub">Cirujano Dentista &middot; C&eacute;dula Profesional '+getDoctorInfo().cedula+' &middot; UAGro</div><div class="sub">'+getDoctorInfo().direccion+'</div><div class="sub">Tel. '+getDoctorInfo().telefono+' &middot; '+getDoctorInfo().correo+'</div></div><div class="hdr-right"><div style="background:#e0f5f0;color:#2e8b72;border-radius:6px;padding:3px 10px;font-weight:700;font-size:9pt;">Exp. '+expNum+'</div><div style="margin-top:4px;font-size:8.5pt;">'+fecha+'</div></div></div>'+'<div class="rx-symbol">Rx</div>'+'<div class="pt-info"><div><span class="pt-label">Paciente</span><strong>'+pN+'</strong></div>'+(edadPeso?'<div><span class="pt-label">Edad / Peso</span>'+edadPeso+'</div>':'')+(diag?'<div><span class="pt-label">Diagn&oacute;stico</span>'+diag+'</div>':'')+'</div>'+'<div class="med-list">'+rxMeds.map((m,i)=>'<div class="med-item"><div class="med-name">'+(i+1)+'. '+m.nombre+'</div><div class="med-detail">Dosis: '+m.dosis+(m.duracion?' &middot; Duraci&oacute;n: '+m.duracion:'')+'</div>'+(m.indicacion?'<div class="med-detail">'+m.indicacion+'</div>':'')+'</div>').join('')+'</div>'+(indic?'<div class="indic"><strong>Indicaciones generales:</strong><br>'+indic.replace(/\n/g,'<br>')+'</div>':'')+'<div class="firma"><div class="firma-block"><div class="firma-line"></div><div style="font-size:9pt;font-weight:500;">'+getDoctorInfo().nombre+'</div><div style="font-size:8pt;color:#5a7068;">C&eacute;dula Profesional '+getDoctorInfo().cedula+'</div></div></div>'+'<div class="footer"><span>DentaNota &middot; Receta m&eacute;dica &middot; '+fecha+'</span><span>Conforme a NOM-004-SSA3-2012 &middot; Vigencia: '+fecha+'</span></div>'+'<script>window.onload=()=>window.print();<\/script></body></html>');
+  pw.document.write('<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Receta - '+pN+'</title><style>@page{size:letter;margin:1.5cm}body{font-family:"Segoe UI",Arial,sans-serif;font-size:10pt;color:#1e2d2a;margin:0;}.hdr{border-bottom:3px solid #5db8a0;padding-bottom:10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-start;}.hdr-left h1{font-size:13pt;color:#2e8b72;margin:0 0 2px;}.hdr-left .sub{font-size:8pt;color:#5a7068;}.hdr-right{text-align:right;font-size:8.5pt;display:flex;align-items:flex-start;}.rx-symbol{font-size:28pt;color:#5db8a0;font-weight:700;margin:10px 0 6px;font-style:italic;}.pt-info{background:#e0f5f0;border-radius:6px;padding:8px 12px;margin-bottom:12px;display:flex;gap:20px;font-size:9.5pt;}.pt-label{color:#5a7068;font-size:8pt;display:block;}.diag{font-size:9.5pt;margin-bottom:12px;}.med-list{margin-bottom:14px;}.med-item{border-left:3px solid #5db8a0;padding:8px 12px;margin-bottom:10px;background:#f7faf9;}.med-name{font-size:11pt;font-weight:700;color:#1e2d2a;margin-bottom:3px;}.med-detail{font-size:9pt;color:#5a7068;}.indic{background:#fff8ec;border:1px solid #e8d4a0;border-radius:6px;padding:9px 12px;font-size:9pt;margin-bottom:14px;line-height:1.6;}.firma{margin-top:20px;display:flex;justify-content:flex-end;}.firma-block{text-align:center;width:220px;}.firma-line{border-top:1px solid #1e2d2a;margin-bottom:4px;margin-top:35px;}.footer{margin-top:12px;border-top:1px solid #c8e0da;padding-top:6px;font-size:7.5pt;color:#888;display:flex;justify-content:space-between;}</style></head><body>'+'<div class="hdr"><div class="hdr-left"><h1>'+getDoctorInfo().nombre+'</h1><div class="sub">'+tituloProfesional()+' &middot; C&eacute;dula Profesional '+getDoctorInfo().cedula+(getDoctorInfo().universidad?' &middot; '+getDoctorInfo().universidad:'')+'</div><div class="sub">'+getDoctorInfo().direccion+'</div><div class="sub">Tel. '+getDoctorInfo().telefono+' &middot; '+getDoctorInfo().correo+'</div></div><div class="hdr-right"><div><div style="background:#e0f5f0;color:#2e8b72;border-radius:6px;padding:3px 10px;font-weight:700;font-size:9pt;">Exp. '+expNum+'</div><div style="margin-top:4px;font-size:8.5pt;">'+fecha+'</div></div>'+folioBox+'</div></div>'+'<div class="rx-symbol">Rx</div>'+'<div class="pt-info"><div><span class="pt-label">Paciente</span><strong>'+pN+'</strong></div>'+(edadPeso?'<div><span class="pt-label">Edad / Peso</span>'+edadPeso+'</div>':'')+(diag?'<div><span class="pt-label">Diagn&oacute;stico</span>'+diag+'</div>':'')+'</div>'+'<div class="med-list">'+rxMeds.map((m,i)=>'<div class="med-item"><div class="med-name">'+(i+1)+'. '+m.nombre+'</div><div class="med-detail">Dosis: '+m.dosis+(m.duracion?' &middot; Duraci&oacute;n: '+m.duracion:'')+'</div>'+(m.indicacion?'<div class="med-detail">'+m.indicacion+'</div>':'')+'</div>').join('')+'</div>'+(indic?'<div class="indic"><strong>Indicaciones generales:</strong><br>'+indic.replace(/\n/g,'<br>')+'</div>':'')+'<div class="firma"><div class="firma-block"><div class="firma-line"></div><div style="font-size:9pt;font-weight:500;">'+getDoctorInfo().nombre+'</div><div style="font-size:8pt;color:#5a7068;">C&eacute;dula Profesional '+getDoctorInfo().cedula+'</div></div></div>'+'<div class="footer"><span>DentaNota &middot; Receta m&eacute;dica &middot; '+fecha+'</span><span>Conforme a NOM-004-SSA3-2012 &middot; Vigencia: '+fecha+'</span></div>'+'<script>window.onload=()=>window.print();<\/script></body></html>');
   pw.document.close();
 }
 
@@ -1608,7 +2201,7 @@ function openPt(key){
   box.appendChild(metrics);
   // Tabs
   const tabsDiv=document.createElement('div');tabsDiv.className='modal-tabs';
-  const tabNames=['Historia','Odontograma','Estado de cuenta','Fotos/Rx'];
+  const tabNames=['Historia','Odontograma','Estado de cuenta','Fotos/Video/Rx'];
   const panelIds=['mt1','mt2','mt3','mt4'];
   tabNames.forEach((n,i)=>{const t=document.createElement('button');t.className='modal-tab'+(i===0?' active':'');t.textContent=n;t.addEventListener('click',()=>showMTab(panelIds[i],t));tabsDiv.appendChild(t);});
   box.appendChild(tabsDiv);
@@ -1640,9 +2233,12 @@ function openPt(key){
     });
   },50);
   // Panel 4: Fotos
-  const fotosH=(p.fotos||[]).slice(0,6).map(f=>'<div class="photo-th"><img src="'+f.data+'" alt="'+f.nombre+'"><div style="position:absolute;bottom:3px;left:3px;right:3px;background:rgba(0,0,0,0.5);color:white;font-size:8px;border-radius:3px;padding:1px 4px;">'+f.nombre+'</div></div>').join('');
+  const fotosH=(p.fotos||[]).slice(0,6).map(f=>{
+    const cont=f.tipo==='video'?'<video src="'+f.data+'" controls style="width:100%;height:100%;object-fit:cover;"></video>':(f.tipo==='pdf'||f.tipo==='otro')?'<a href="'+f.data+'" download="'+f.nombre+'" style="display:flex;align-items:center;justify-content:center;height:100%;font-size:26px;text-decoration:none;">&#x1F4C4;</a>':'<img src="'+f.data+'" alt="'+f.nombre+'">';
+    return '<div class="photo-th">'+cont+'<div style="position:absolute;bottom:3px;left:3px;right:3px;background:rgba(0,0,0,0.5);color:white;font-size:8px;border-radius:3px;padding:1px 4px;">'+f.nombre+'</div></div>';
+  }).join('');
   const mt4=document.createElement('div');mt4.className='modal-panel';mt4.id='mt4';
-  mt4.innerHTML='<div style="font-size:11px;color:var(--ts);margin-bottom:9px;">Fotos y radiografias por cita.</div><div style="display:flex;gap:8px;margin-bottom:10px;"><input type="text" id="fotoNombre" placeholder="Nombre de la foto" style="flex:1;padding:7px 9px;border:1px solid var(--bd);border-radius:7px;font-size:12px;"><label class="btn btn-s btn-sm" style="cursor:pointer;display:flex;align-items:center;">Subir foto<input type="file" accept="image/*" style="display:none;" id="fotoInput-'+key+'"></label></div><div class="photo-grid" id="photoGrid-'+key+'">'+fotosH+'<div class="photo-th add"><label style="cursor:pointer;text-align:center;"><span style="font-size:20px;">+</span><br>Agregar<input type="file" accept="image/*" style="display:none;" id="fotoInput2-'+key+'"></label></div></div>';
+  mt4.innerHTML='<div style="font-size:11px;color:var(--ts);margin-bottom:9px;">Fotos, radiografias (imagen o PDF) y videos cortos (max. 8MB) por cita. Todo se guarda en este navegador.</div><div style="display:flex;gap:8px;margin-bottom:10px;"><input type="text" id="fotoNombre" placeholder="Nombre del archivo" style="flex:1;padding:7px 9px;border:1px solid var(--bd);border-radius:7px;font-size:12px;"><label class="btn btn-s btn-sm" style="cursor:pointer;display:flex;align-items:center;">Subir archivo<input type="file" accept="image/*,video/*,application/pdf" style="display:none;" id="fotoInput-'+key+'"></label></div><div class="photo-grid" id="photoGrid-'+key+'">'+fotosH+'<div class="photo-th add"><label style="cursor:pointer;text-align:center;"><span style="font-size:20px;">+</span><br>Agregar<input type="file" accept="image/*,video/*,application/pdf" style="display:none;" id="fotoInput2-'+key+'"></label></div></div>';
   box.appendChild(mt4);
   setTimeout(()=>{
     const fi=document.getElementById('fotoInput-'+key);if(fi)fi.addEventListener('change',e=>subirFoto(key,e.target));
@@ -1690,43 +2286,76 @@ function impEC(key){
 function subirFoto(key,input){
   const file=input.files[0];if(!file)return;
   const nombre=document.getElementById('fotoNombre')?.value||file.name;
-  const reader=new FileReader();
-  reader.onload=function(e){
-    const img=new Image();
-    img.onload=function(){
-      const maxDim=1100;
-      let w=img.width,h=img.height;
-      if(w>h&&w>maxDim){h=Math.round(h*(maxDim/w));w=maxDim;}
-      else if(h>=w&&h>maxDim){w=Math.round(w*(maxDim/h));h=maxDim;}
-      const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
-      canvas.getContext('2d').drawImage(img,0,0,w,h);
-      const dataUrl=canvas.toDataURL('image/jpeg',0.72);
-      try{
-        const patients=JSON.parse(localStorage.getItem('dn_patients')||'{}');
-        if(!patients[key])return;
-        if(!patients[key].fotos)patients[key].fotos=[];
-        patients[key].fotos.unshift({id:Date.now(),nombre,data:dataUrl,fecha:new Date().toLocaleDateString('es-MX')});
-        localStorage.setItem('dn_patients',JSON.stringify(patients));
-        openPt(key);
-      }catch(err){
-        alert('No se pudo guardar la foto: se lleno el espacio de almacenamiento de este navegador. Elimina fotos antiguas de otros pacientes o usa menos fotos por paciente, e intenta de nuevo.');
-      }
+  const MAXV=8*1024*1024; // 8MB - localStorage del navegador es limitado
+  if(file.type.startsWith('image/')){
+    const reader=new FileReader();
+    reader.onload=function(e){
+      const img=new Image();
+      img.onload=function(){
+        const maxDim=1100;
+        let w=img.width,h=img.height;
+        if(w>h&&w>maxDim){h=Math.round(h*(maxDim/w));w=maxDim;}
+        else if(h>=w&&h>maxDim){w=Math.round(w*(maxDim/h));h=maxDim;}
+        const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        const dataUrl=canvas.toDataURL('image/jpeg',0.72);
+        guardarArchivoPt(key,{id:Date.now(),nombre,tipo:'imagen',data:dataUrl,fecha:new Date().toLocaleDateString('es-MX')});
+      };
+      img.onerror=function(){alert('No se pudo procesar la imagen. Intenta con otra foto.');};
+      img.src=e.target.result;
     };
-    img.onerror=function(){alert('No se pudo procesar la imagen. Intenta con otra foto.');};
-    img.src=e.target.result;
-  };
-  reader.onerror=function(){alert('No se pudo leer el archivo. Intenta de nuevo.');};
-  reader.readAsDataURL(file);
+    reader.onerror=function(){alert('No se pudo leer el archivo. Intenta de nuevo.');};
+    reader.readAsDataURL(file);
+    return;
+  }
+  if(file.size>MAXV){alert('Este archivo pesa '+(file.size/1024/1024).toFixed(1)+'MB. Como el expediente se guarda en este navegador (no en un servidor), el limite practico para video/PDF es de 8MB. Comprime el archivo o sube una version mas ligera.');return;}
+  const tipo=file.type.startsWith('video/')?'video':(file.type==='application/pdf'?'pdf':'otro');
+  const reader2=new FileReader();
+  reader2.onload=function(e){guardarArchivoPt(key,{id:Date.now(),nombre,tipo,data:e.target.result,fecha:new Date().toLocaleDateString('es-MX')});};
+  reader2.onerror=function(){alert('No se pudo leer el archivo. Intenta de nuevo.');};
+  reader2.readAsDataURL(file);
+}
+function guardarArchivoPt(key,archivo){
+  try{
+    const patients=JSON.parse(localStorage.getItem('dn_patients')||'{}');
+    if(!patients[key])return;
+    if(!patients[key].fotos)patients[key].fotos=[];
+    patients[key].fotos.unshift(archivo);
+    localStorage.setItem('dn_patients',JSON.stringify(patients));
+    openPt(key);
+  }catch(err){
+    alert('No se pudo guardar el archivo: se lleno el espacio de almacenamiento de este navegador. Elimina archivos antiguos de otros pacientes o usa archivos mas ligeros, e intenta de nuevo.');
+  }
 }
 
 function nuevaCon(key){
   const patients=JSON.parse(localStorage.getItem('dn_patients')||'{}');const p=patients[key];if(!p)return;
   closeModal();
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.querySelector('[data-view="nueva"]').classList.add('active');document.getElementById('view-nueva').classList.add('active');
-  document.getElementById('patientName').value=p.name;document.getElementById('patientAge').value=p.age||'';document.getElementById('patientSex').value=p.sex||'';document.getElementById('patientPhone').value=p.phone||'';document.getElementById('patientEmail').value=p.email||'';document.getElementById('patientAddress').value=p.address||'';
+  document.getElementById('patientName').value=p.name;
+  document.getElementById('patientAge').value=p.age||'';
+  document.getElementById('patientSex').value=p.sex||'';
+  document.getElementById('patientPhone').value=p.phone||'';
+  document.getElementById('patientEmail').value=p.email||'';
+  document.getElementById('patientAddress').value=p.address||'';
+  document.getElementById('patientDob').value=p.dob||'';
+  document.getElementById('patientCivil').value=p.civil||'';
+  document.getElementById('patientJob').value=p.job||'';
   document.getElementById('visitType').value='seguimiento';
+  document.getElementById('visitDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('visitTime').value=new Date().toTimeString().slice(0,5);
+  // Cargar antecedentes de la última consulta
+  const ult=p.consultas&&p.consultas[0];
+  if(ult){
+    if(ult.antAlergias)document.getElementById('antAlergias').value=ult.antAlergias;
+    if(ult.antHF)document.getElementById('antHF').value=ult.antHF;
+    if(ult.antSis)document.getElementById('antSis').value=ult.antSis;
+    if(ult.antMeds)document.getElementById('antMeds').value=ult.antMeds;
+  }
   if(p.odontoEvolucion?.data)odoData=JSON.parse(JSON.stringify(p.odontoEvolucion.data));
-  renderOdo();goTab('t1');
+  renderOdo();
+  // Ir directo a nota de evolución
+  goTab('t7');
 }
 
 function delCita(key,id){if(!confirm('Eliminar esta consulta?'))return;const patients=JSON.parse(localStorage.getItem('dn_patients')||'{}');if(!patients[key])return;patients[key].consultas=patients[key].consultas.filter(c=>c.id!==id);localStorage.setItem('dn_patients',JSON.stringify(patients));openPt(key);}
@@ -1734,6 +2363,357 @@ function delPt(key){if(!confirm('Eliminar el expediente COMPLETO? No se puede de
 function closeModal(){document.getElementById('modalOv').classList.remove('show');}
 document.getElementById('modalOv').addEventListener('click',e=>{if(e.target.id==='modalOv')closeModal();});
 document.addEventListener('click',e=>{if(!e.target.closest('.tooth-g')&&!e.target.closest('.odonto-popup'))closeOdoPopup();});
+
+// ===== AGENDA =====
+let semanaOffset=0;
+const DIAS=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
+const MESES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const TIPO_LABEL={'limpieza':'Limpieza','seguimiento':'Seguimiento','extraccion':'Extraccion','endodoncia':'Endodoncia','restauracion':'Restauracion','ortodoncia':'Ortodoncia','protesis':'Protesis','urgencia':'Urgencia','otro':'Cita'};
+const TIPO_COLOR={'limpieza':'#1D9E75','seguimiento':'#378ADD','extraccion':'#E24B4A','endodoncia':'#9B59B6','restauracion':'#85B7EB','ortodoncia':'#FAC775','protesis':'#FA8C16','urgencia':'#E24B4A','otro':'#5db8a0'};
+
+// Agregar vista agenda al nav
+document.querySelectorAll('.nav-btn').forEach(b=>{
+  if(b.dataset.view==='agenda'){
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      b.classList.add('active');
+      document.getElementById('view-agenda').classList.add('active');
+      semanaOffset=0;renderAgenda();renderAlertasCumple();
+    });
+  }
+});
+
+function getAgenda(){return JSON.parse(localStorage.getItem('dn_agenda')||'[]');}
+function saveAgenda(ag){localStorage.setItem('dn_agenda',JSON.stringify(ag));}
+
+function guardarCitaAgenda(){
+  const fecha=document.getElementById('agFecha').value;
+  const hora=document.getElementById('agHora').value;
+  const paciente=document.getElementById('agPaciente').value||document.getElementById('patientName').value;
+  const tel=document.getElementById('agTel').value||document.getElementById('patientPhone').value;
+  const tipo=document.getElementById('agTipo').value;
+  const nota=document.getElementById('agNota').value;
+  const correo=document.getElementById('agCorreo').value;
+  if(!fecha||!hora||!paciente){alert('Completa fecha, hora y paciente.');return;}
+  const ag=getAgenda();
+  ag.push({id:Date.now(),fecha,hora,paciente,tel,tipo,nota,correo,creado:new Date().toISOString()});
+  saveAgenda(ag);
+  // Alerta interna de limpieza a 3 meses
+  if(tipo!=='limpieza'){
+    const fechaLimpieza=new Date(fecha);fechaLimpieza.setMonth(fechaLimpieza.getMonth()+3);
+    const fechaL=fechaLimpieza.toISOString().split('T')[0];
+    ag.push({id:Date.now()+1,fecha:fechaL,hora:'09:00',paciente,tel,tipo:'limpieza',nota:'RECORDATORIO: Limpieza dental - 3 meses desde ultima consulta',correo,creado:new Date().toISOString(),esRecordatorio:true});
+    saveAgenda(ag);
+  }
+  const btn=document.querySelector('[onclick="guardarCitaAgenda()"]');
+  if(btn){btn.textContent='Cita guardada';setTimeout(()=>btn.textContent='Guardar cita',2000);}
+  alert('Cita agendada. Se creo recordatorio de limpieza para 3 meses despues.');
+}
+
+function verAgenda(){
+  document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelector('[data-view="agenda"]').classList.add('active');
+  document.getElementById('view-agenda').classList.add('active');
+  semanaOffset=0;renderAgenda();renderAlertasCumple();
+}
+
+function cambiarSemana(dir){
+  if(dir===0)semanaOffset=0;else semanaOffset+=dir;
+  renderAgenda();
+}
+
+function getLunesActual(){
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  const dia=hoy.getDay();
+  const lunes=new Date(hoy);lunes.setDate(hoy.getDate()-(dia===0?6:dia-1));
+  lunes.setDate(lunes.getDate()+semanaOffset*7);
+  return lunes;
+}
+
+function renderAgenda(){
+  const ag=getAgenda();
+  const lunes=getLunesActual();
+  const dias=[];
+  for(let i=0;i<7;i++){const d=new Date(lunes);d.setDate(lunes.getDate()+i);dias.push(d);}
+  const domEl=document.getElementById('semanaLabel');
+  if(domEl)domEl.textContent=dias[0].getDate()+' '+MESES[dias[0].getMonth()]+' - '+dias[6].getDate()+' '+MESES[dias[6].getMonth()]+' '+dias[0].getFullYear();
+  const grid=document.getElementById('agendaGrid');if(!grid)return;
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  grid.innerHTML=dias.map(d=>{
+    const ds=d.toISOString().split('T')[0];
+    const citas=ag.filter(c=>c.fecha===ds).sort((a,b)=>a.hora.localeCompare(b.hora));
+    const esHoy=d.getTime()===hoy.getTime();
+    return '<div style="background:'+(esHoy?'var(--vc)':'var(--bl)')+';border:1px solid '+(esHoy?'var(--v)':'var(--bd)')+';border-radius:9px;padding:9px;min-height:80px;">'+'<div style="font-size:10px;font-weight:600;color:'+(esHoy?'var(--vo)':'var(--ts)')+';">'+DIAS[d.getDay()]+'<br>'+d.getDate()+'</div>'+citas.map(c=>'<div style="background:'+(TIPO_COLOR[c.tipo]||'#5db8a0')+';color:white;border-radius:5px;padding:3px 5px;font-size:9px;margin-top:4px;cursor:pointer;"'+(c.esRecordatorio?' style="opacity:0.7;"':'')+' title="'+c.paciente+' - '+c.nota+'">'+c.hora+' '+c.paciente.split(' ')[0]+'<br>'+(TIPO_LABEL[c.tipo]||'Cita')+'</div>').join('')+'</div>';
+  }).join('');
+  // Lista de citas proximas
+  const hoyStr=new Date().toISOString().split('T')[0];
+  const proximas=ag.filter(c=>c.fecha>=hoyStr).sort((a,b)=>a.fecha.localeCompare(b.fecha)||a.hora.localeCompare(b.hora)).slice(0,20);
+  const lista=document.getElementById('listaCitas');if(!lista)return;
+  if(!proximas.length){lista.innerHTML='<div style="font-size:12px;color:var(--ts);padding:10px;">Sin citas proximas.</div>';return;}
+  lista.innerHTML=proximas.map(c=>{
+    const f=new Date(c.fecha+'T12:00:00');
+    const fStr=f.getDate()+' '+MESES[f.getMonth()]+', '+f.getFullYear();
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--bd);">'+'<div><div style="font-size:12px;font-weight:500;">'+(c.esRecordatorio?'&#x1F514; ':'')+c.paciente+'</div><div style="font-size:10px;color:var(--ts);">'+fStr+' a las '+c.hora+' - '+(TIPO_LABEL[c.tipo]||'Cita')+(c.nota?' - '+c.nota:'')+'</div></div>'+'<button class="btn btn-d btn-sm" onclick="eliminarCitaAg('+c.id+')">&#xD7;</button></div>';
+  }).join('');
+}
+
+function eliminarCitaAg(id){
+  if(!confirm('Eliminar esta cita?'))return;
+  const ag=getAgenda().filter(c=>c.id!==id);saveAgenda(ag);renderAgenda();
+}
+
+function renderAlertasCumple(){
+  const patients=JSON.parse(localStorage.getItem('dn_patients')||'{}');
+  const hoy=new Date();const mm=hoy.getMonth()+1,dd=hoy.getDate();
+  const cumples=Object.values(patients).filter(p=>{
+    if(!p.dob)return false;
+    const d=new Date(p.dob);return d.getMonth()+1===mm&&d.getDate()===dd;
+  });
+  const div=document.getElementById('alertasCumple');if(!div)return;
+  if(cumples.length>0){
+    div.innerHTML=cumples.map(p=>'<div class="alerta-cita" style="background:#fdf0ee;border-color:#f5c4b3;"><span style="font-size:20px;">&#x1F382;</span><div><strong>Hoy es el cumpleanos de '+p.name+'</strong><div style="font-size:11px;color:var(--ts);">Considera felicitarlo para fidelizar al paciente</div></div></div>').join('');
+  } else div.innerHTML='';
+}
+
+// Llenar datos de agenda desde el paciente actual
+function llenarAgendaPaciente(){
+  const n=document.getElementById('patientName').value;
+  const t=document.getElementById('patientPhone').value;
+  const e=document.getElementById('patientEmail').value;
+  if(document.getElementById('agPaciente'))document.getElementById('agPaciente').value=n;
+  if(document.getElementById('agTel'))document.getElementById('agTel').value=t;
+  if(document.getElementById('agCorreo'))document.getElementById('agCorreo').value=e;
+  const hoy=new Date();hoy.setDate(hoy.getDate()+1);
+  if(document.getElementById('agFecha'))document.getElementById('agFecha').value=hoy.toISOString().split('T')[0];
+}
+
+// Auto llenar datos de agenda cuando se cambia a pestaña 9
+document.querySelector('[data-panel="t9"]')?.addEventListener('click',llenarAgendaPaciente);
+
+// Alertas de cumpleaños también en vista pacientes
+function renderAlertasCitas(){
+  const patients=JSON.parse(localStorage.getItem('dn_patients')||'{}');
+  const hoy=new Date();const hoyStr=hoy.toISOString().split('T')[0];
+  const alertas=[];
+  // Cumpleaños
+  const mm=hoy.getMonth()+1,dd=hoy.getDate();
+  Object.values(patients).forEach(p=>{
+    if(!p.dob)return;const d=new Date(p.dob);
+    if(d.getMonth()+1===mm&&d.getDate()===dd)alertas.push({emoji:'&#x1F382;',nombre:p.name,msg:'Hoy es su cumplea&ntilde;os',color:'#fdf0ee',bc:'#f5c4b3'});
+  });
+  // Citas del día
+  const ag=getAgenda();const citasHoy=ag.filter(c=>c.fecha===hoyStr);
+  if(citasHoy.length>0)alertas.push({emoji:'&#x1F4C5;',nombre:citasHoy.length+' cita'+(citasHoy.length>1?'s':'')+' hoy',msg:citasHoy.map(c=>c.hora+' - '+c.paciente).join(' / '),color:'var(--vc)',bc:'var(--v)'});
+  const div=document.getElementById('alertasCitas');if(!div)return;
+  if(alertas.length>0)div.innerHTML=alertas.map(a=>'<div class="alerta-cita" style="background:'+a.color+';border-color:'+a.bc+';"><span style="font-size:18px;">'+a.emoji+'</span><div><strong>'+a.nombre+'</strong><div style="font-size:11px;color:var(--ts);">'+a.msg+'</div></div></div>').join('');
+  else div.innerHTML='';
+}
+
+// ===== DESCUENTO EN PRESUPUESTO =====
+function aplicarDescuento(){
+  const pct=parseFloat(document.getElementById('descPct')?.value||0);
+  if(isNaN(pct)||pct<0||pct>100){alert('Ingresa un porcentaje valido entre 0 y 100');return;}
+  const subtotal=bgtItems.reduce((s,b)=>s+b.precio*b.cantidad,0);
+  const desc=subtotal*pct/100;
+  const total=subtotal-desc;
+  const el=document.getElementById('bgtTotal');if(el)el.textContent='$'+total.toLocaleString('es-MX');
+  const descEl=document.getElementById('descDisplay');
+  if(descEl)descEl.textContent=pct>0?'Descuento '+pct+'%: -$'+desc.toLocaleString('es-MX'):'';
+  window._descuento={pct,monto:desc};
+  renderCostosInternos();
+}
+
+// Inicializar renderAgenda al cargar
+setTimeout(()=>{renderAlertasCitas();renderAlertasCumple();},300);
+
+// ===== MÓDULOS ORTODONCIA Y ENDODONCIA (siempre visibles, se llenan solo cuando se usan) =====
+function toggleModulo(tipo, activo){
+  if(tipo==='orto'){if(activo)goTab('t10');}
+  else{if(activo)goTab('t11');}
+}
+
+// --- Micrófonos Ortodoncia ---
+let recOrto=null,isRecOrto=false,isPauOrto=false,finTxOrto='',timerIntOrto=null,secsOrto=0;
+const mBtnOrto=document.getElementById('micBtnOrto'),pBtnOrto=document.getElementById('pauseBtnOrto'),stOrto=document.getElementById('stTxtOrto'),timerOrto=document.getElementById('timerOrto'),txBOrto=document.getElementById('txBoxOrto'),finElOrto=document.getElementById('finTxOrto'),intElOrto=document.getElementById('intTxOrto');
+
+function makeRecOrto(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return null;const r=new SR();r.lang='es-MX';r.continuous=true;r.interimResults=true;r.onresult=(e)=>{if(isPauOrto)return;let it='';for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)finTxOrto+=t+' ';else it+=t;}finElOrto.textContent=finTxOrto;intElOrto.textContent=it;};r.onerror=()=>{};r.onend=()=>{if(isRecOrto&&!isPauOrto)r.start();};return r;}
+
+if(mBtnOrto){mBtnOrto.addEventListener('click',()=>{
+  if(!isRecOrto){if(!recOrto)recOrto=makeRecOrto();if(!recOrto)return;finTxOrto='';finElOrto.textContent='';intElOrto.textContent='';isPauOrto=false;recOrto.start();isRecOrto=true;mBtnOrto.classList.add('rec');mBtnOrto.textContent='\u23f9\ufe0f';pBtnOrto.style.display='flex';stOrto.textContent='Dictando control...';txBOrto.classList.add('show');document.getElementById('actBtnsOrto').style.display='none';timerOrto.style.display='block';secsOrto=0;timerOrto.textContent=fmt(0);timerIntOrto=setInterval(()=>{if(!isPauOrto){secsOrto++;timerOrto.textContent=fmt(secsOrto);}},1000);}
+  else{isRecOrto=false;recOrto.stop();mBtnOrto.classList.remove('rec');mBtnOrto.textContent='\u1f3a4';pBtnOrto.style.display='none';stOrto.textContent='Control grabado.';clearInterval(timerIntOrto);document.getElementById('actBtnsOrto').style.display='flex';}
+});}
+if(pBtnOrto){pBtnOrto.addEventListener('click',()=>{if(!isRecOrto)return;if(!isPauOrto){isPauOrto=true;recOrto.stop();mBtnOrto.classList.add('pau');pBtnOrto.textContent='\u25b6\ufe0f';}else{isPauOrto=false;recOrto.start();mBtnOrto.classList.remove('pau');pBtnOrto.textContent='\u23f8\ufe0f';}});}
+if(document.getElementById('discardBtnOrto')){document.getElementById('discardBtnOrto').addEventListener('click',()=>{finTxOrto='';finElOrto.textContent='';intElOrto.textContent='';txBOrto.classList.remove('show');document.getElementById('actBtnsOrto').style.display='none';timerOrto.style.display='none';pBtnOrto.style.display='none';});}
+
+if(document.getElementById('genBtnOrto')){document.getElementById('genBtnOrto').addEventListener('click',async()=>{
+  const transcript=finTxOrto.trim();if(!transcript)return alert('No se detecto dictado.');
+  const apiKey=getKey();if(!apiKey)return alert('Configura tu codigo de acceso.');
+  document.getElementById('loadMsgOrto').classList.add('show');document.getElementById('genBtnOrto').disabled=true;
+  const pN=document.getElementById('patientName').value||'Paciente';
+  const prompt='Eres asistente dental. Analiza este dictado de control de ortodoncia y genera un reporte estructurado. Responde UNICAMENTE JSON valido.\nPACIENTE: '+pN+'\nDICTADO: '+transcript+'\nJSON: {"fecha":"'+new Date().toLocaleDateString('es-MX')+'","procedimiento":"descripcion de lo realizado hoy","arco":"tipo de arco colocado si aplica","aditamentos":"brackets, bandas, cadenas, resortes ajustados","evolucion":"descripcion del avance del tratamiento","indicaciones":["indicacion1"],"proxima_cita":"descripcion de lo que se hara"}';
+  try{
+    const r=await fetchAndParseJson(prompt,{temperature:0.2,maxOutputTokens:2000,responseMimeType:'application/json'});
+    const lista=document.getElementById('ortoControlesLista');
+    const div=document.createElement('div');
+    div.style.cssText='border:1px solid #fac775;border-radius:8px;padding:10px 12px;margin-bottom:8px;background:#fffdf7;';
+    div.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><strong style="font-size:12px;color:#7a5c1f;">Control — '+r.fecha+'</strong><span style="font-size:10px;color:var(--ts);">'+r.arco+'</span></div>'+'<div style="font-size:11px;line-height:1.6;"><strong>Procedimiento:</strong> '+r.procedimiento+'<br><strong>Aditamentos:</strong> '+(r.aditamentos||'-')+'<br><strong>Evoluci&#xF3;n:</strong> '+(r.evolucion||'-')+'<br><strong>Indicaciones:</strong> '+(r.indicaciones||[]).join(', ')+'<br><strong>Pr&#xF3;xima cita:</strong> '+(r.proxima_cita||'-')+'</div>';
+    lista.insertBefore(div,lista.firstChild);
+  }catch(err){alert('Error: '+err.message);}
+  finally{document.getElementById('loadMsgOrto').classList.remove('show');document.getElementById('genBtnOrto').disabled=false;}
+});}
+
+// Firmas ortodoncia
+let signOrtoCtx=null,signOrtoDraw=false;
+function initSignOrto(){const c=document.getElementById('signOrto');if(!c)return;signOrtoCtx=c.getContext('2d');signOrtoCtx.strokeStyle='#1e2d2a';signOrtoCtx.lineWidth=2;signOrtoCtx.lineCap='round';c.addEventListener('mousedown',e=>{signOrtoDraw=true;signOrtoCtx.beginPath();signOrtoCtx.moveTo(e.offsetX,e.offsetY);});c.addEventListener('mousemove',e=>{if(!signOrtoDraw)return;signOrtoCtx.lineTo(e.offsetX,e.offsetY);signOrtoCtx.stroke();});c.addEventListener('mouseup',()=>signOrtoDraw=false);c.addEventListener('touchstart',e=>{e.preventDefault();signOrtoDraw=true;const r=c.getBoundingClientRect(),t=e.touches[0];signOrtoCtx.beginPath();signOrtoCtx.moveTo(t.clientX-r.left,t.clientY-r.top);},{passive:false});c.addEventListener('touchmove',e=>{e.preventDefault();if(!signOrtoDraw)return;const r=c.getBoundingClientRect(),t=e.touches[0];signOrtoCtx.lineTo(t.clientX-r.left,t.clientY-r.top);signOrtoCtx.stroke();},{passive:false});c.addEventListener('touchend',()=>signOrtoDraw=false);}
+function clearSignOrto(){if(signOrtoCtx){const c=document.getElementById('signOrto');signOrtoCtx.clearRect(0,0,c.width,c.height);}}
+function sellarFirmaOrto(){const el=document.getElementById('signOrtoFecha');const sello=new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'})+' '+new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});if(el){el.textContent='Firmado el '+sello+' — '+(document.getElementById('patientName').value||'Paciente');el.style.display='block';}if(signOrtoCtx){const c=document.getElementById('signOrto');signOrtoCtx.font='8px Segoe UI';signOrtoCtx.fillStyle='#5a7068';signOrtoCtx.fillText('Firmado: '+sello,5,c.height-4);}alert('Firma de consentimiento de ortodoncia sellada.');}
+setTimeout(initSignOrto,600);
+
+function subirFotoOrto(input){
+  Array.from(input.files).forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=e=>{const grid=document.getElementById('ortoFotoGrid');const div=document.createElement('div');div.className='photo-th';div.innerHTML='<img src="'+e.target.result+'" alt="Foto ortodoncia"><div style="position:absolute;bottom:3px;left:3px;right:3px;background:rgba(0,0,0,0.5);color:white;font-size:8px;border-radius:3px;padding:1px 4px;">'+file.name+'</div>';grid.insertBefore(div,grid.lastChild);};
+    reader.readAsDataURL(file);
+  });
+}
+
+function imprimirRefOrto(){
+  const pN=document.getElementById('patientName').value||'Paciente';
+  const esp=document.getElementById('ortoRefEspecialista').value||'Especialista';
+  const mot=document.getElementById('ortoRefMotivo').value||'Tratamiento de ortodoncia';
+  const obs=document.getElementById('ortoRefObs').value||'';
+  const fecha=new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'});
+  const dr=getDoctorInfo();
+  const pw=window.open('','_blank');
+  pw.document.write('<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Referido Ortodoncia</title><style>body{font-family:"Segoe UI",Arial,sans-serif;font-size:10pt;color:#1e2d2a;max-width:600px;margin:30px auto;}@page{size:letter;margin:1.4cm}.hdr{border-bottom:2px solid #e09850;padding-bottom:8px;margin-bottom:14px;}h1{font-size:12pt;color:#7a5c1f;margin:0 0 2px;}h2{font-size:10pt;color:#7a5c1f;margin:14px 0 6px;border-bottom:1px solid #fac775;padding-bottom:2px;}.row{margin-bottom:6px;font-size:9.5pt;}.label{font-weight:700;color:#7a5c1f;font-size:8.5pt;display:block;}.sig{margin-top:24px;display:flex;justify-content:space-between;}.sb{text-align:center;width:45%;}.sl{border-top:1px solid #1e2d2a;margin-top:30px;margin-bottom:4px;}</style></head><body>'+'<div class="hdr"><h1>'+dr.nombre+'</h1><div style="font-size:8pt;color:#5a7068;">C&eacute;dula '+dr.cedula+' &middot; '+dr.direccion+'</div></div>'+'<h2>&#x1F9B7; Referido a Ortodoncia</h2>'+'<div class="row"><span class="label">Paciente</span>'+pN+'</div>'+'<div class="row"><span class="label">Fecha</span>'+fecha+'</div>'+'<div class="row"><span class="label">Referido a</span>'+esp+'</div>'+'<div class="row"><span class="label">Motivo</span>'+mot+'</div>'+(obs?'<div class="row"><span class="label">Observaciones cl&iacute;nicas</span>'+obs+'</div>':'')+'<div class="sig"><div class="sb"><div class="sl"></div><div style="font-size:8.5pt;">'+dr.nombre+'</div><div style="font-size:7.5pt;color:#5a7068;">C&eacute;dula '+dr.cedula+'</div></div><div class="sb"><div class="sl"></div><div style="font-size:8.5pt;">Sello del especialista</div></div></div>'+'<script>window.onload=()=>window.print();<\/script></body></html>');
+  pw.document.close();
+}
+
+// --- Micrófonos Endodoncia ---
+let recEndo=null,isRecEndo=false,isPauEndo=false,finTxEndo='',timerIntEndo=null,secsEndo=0;
+const mBtnEndo=document.getElementById('micBtnEndo'),pBtnEndo=document.getElementById('pauseBtnEndo'),stEndo=document.getElementById('stTxtEndo'),timerEndo=document.getElementById('timerEndo'),txBEndo=document.getElementById('txBoxEndo'),finElEndo=document.getElementById('finTxEndo'),intElEndo=document.getElementById('intTxEndo');
+
+function makeRecEndo(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return null;const r=new SR();r.lang='es-MX';r.continuous=true;r.interimResults=true;r.onresult=(e)=>{if(isPauEndo)return;let it='';for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)finTxEndo+=t+' ';else it+=t;}finElEndo.textContent=finTxEndo;intElEndo.textContent=it;};r.onerror=()=>{};r.onend=()=>{if(isRecEndo&&!isPauEndo)r.start();};return r;}
+
+if(mBtnEndo){mBtnEndo.addEventListener('click',()=>{
+  if(!isRecEndo){if(!recEndo)recEndo=makeRecEndo();if(!recEndo)return;finTxEndo='';finElEndo.textContent='';intElEndo.textContent='';isPauEndo=false;recEndo.start();isRecEndo=true;mBtnEndo.classList.add('rec');mBtnEndo.textContent='\u23f9\ufe0f';pBtnEndo.style.display='flex';stEndo.textContent='Dictando sesi\xf3n...';txBEndo.classList.add('show');document.getElementById('actBtnsEndo').style.display='none';timerEndo.style.display='block';secsEndo=0;timerEndo.textContent=fmt(0);timerIntEndo=setInterval(()=>{if(!isPauEndo){secsEndo++;timerEndo.textContent=fmt(secsEndo);}},1000);}
+  else{isRecEndo=false;recEndo.stop();mBtnEndo.classList.remove('rec');mBtnEndo.textContent='\u1f3a4';pBtnEndo.style.display='none';stEndo.textContent='Sesi\xf3n grabada.';clearInterval(timerIntEndo);document.getElementById('actBtnsEndo').style.display='flex';}
+});}
+if(pBtnEndo){pBtnEndo.addEventListener('click',()=>{if(!isRecEndo)return;if(!isPauEndo){isPauEndo=true;recEndo.stop();mBtnEndo.classList.add('pau');pBtnEndo.textContent='\u25b6\ufe0f';}else{isPauEndo=false;recEndo.start();mBtnEndo.classList.remove('pau');pBtnEndo.textContent='\u23f8\ufe0f';}});}
+if(document.getElementById('discardBtnEndo')){document.getElementById('discardBtnEndo').addEventListener('click',()=>{finTxEndo='';finElEndo.textContent='';intElEndo.textContent='';txBEndo.classList.remove('show');document.getElementById('actBtnsEndo').style.display='none';timerEndo.style.display='none';pBtnEndo.style.display='none';});}
+
+if(document.getElementById('genBtnEndo')){document.getElementById('genBtnEndo').addEventListener('click',async()=>{
+  const transcript=finTxEndo.trim();if(!transcript)return alert('No se detecto dictado.');
+  const apiKey=getKey();if(!apiKey)return alert('Configura tu codigo de acceso.');
+  document.getElementById('loadMsgEndo').classList.add('show');document.getElementById('genBtnEndo').disabled=true;
+  const pN=document.getElementById('patientName').value||'Paciente';
+  const diente=document.getElementById('endoDiente').value||'no especificado';
+  const prompt='Eres asistente dental experto en endodoncia. Analiza este dictado de sesi\xf3n de endodoncia y genera reporte. Responde UNICAMENTE JSON valido.\nPACIENTE: '+pN+' DIENTE: '+diente+'\nDICTADO: '+transcript+'\nJSON: {"fecha":"'+new Date().toLocaleDateString('es-MX')+'","sesion_num":1,"procedimiento":"descripcion completa","apertura":"acceso coronario","conductometria":"longitudes de trabajo obtenidas si aplica","instrumentacion":"limas y tecnica usada","irrigacion":"irrigantes usados","medicacion":"medicamento colocado","obturacion":"si se obturó, tecnica y material","hallazgos":"hallazgos importantes","indicaciones":["indicacion1"],"proxima_cita":"descripcion","estado":"En proceso / Obturado / Referido"}';
+  try{
+    const r=await fetchAndParseJson(prompt,{temperature:0.2,maxOutputTokens:2000,responseMimeType:'application/json'});
+    const lista=document.getElementById('endoSesionesLista');
+    const div=document.createElement('div');
+    div.style.cssText='border:1px solid #85b7eb;border-radius:8px;padding:10px 12px;margin-bottom:8px;background:#f0f6fd;';
+    div.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><strong style="font-size:12px;color:#185fa5;">Sesi\xf3n '+r.sesion_num+' &mdash; '+r.fecha+'</strong><span style="font-size:10px;background:#185fa5;color:white;padding:2px 8px;border-radius:10px;">'+( r.estado||'En proceso')+'</span></div>'+'<div style="font-size:11px;line-height:1.6;"><strong>Procedimiento:</strong> '+r.procedimiento+'<br>'+(r.conductometria?'<strong>Conductometr\xeda:</strong> '+r.conductometria+'<br>':'')+(r.instrumentacion?'<strong>Instrumentaci\xf3n:</strong> '+r.instrumentacion+'<br>':'')+'<strong>Irrigaci\xf3n:</strong> '+(r.irrigacion||'-')+'<br><strong>Medicaci\xf3n:</strong> '+(r.medicacion||'-')+'<br>'+(r.obturacion?'<strong>Obturaci\xf3n:</strong> '+r.obturacion+'<br>':'')+'<strong>Indicaciones:</strong> '+(r.indicaciones||[]).join(', ')+'<br><strong>Pr\xf3xima cita:</strong> '+(r.proxima_cita||'-')+'</div>';
+    lista.insertBefore(div,lista.firstChild);
+  }catch(err){alert('Error: '+err.message);}
+  finally{document.getElementById('loadMsgEndo').classList.remove('show');document.getElementById('genBtnEndo').disabled=false;}
+});}
+
+// Firmas endodoncia
+let signEndoCtx=null,signEndoDraw=false;
+function initSignEndo(){const c=document.getElementById('signEndo');if(!c)return;signEndoCtx=c.getContext('2d');signEndoCtx.strokeStyle='#1e2d2a';signEndoCtx.lineWidth=2;signEndoCtx.lineCap='round';c.addEventListener('mousedown',e=>{signEndoDraw=true;signEndoCtx.beginPath();signEndoCtx.moveTo(e.offsetX,e.offsetY);});c.addEventListener('mousemove',e=>{if(!signEndoDraw)return;signEndoCtx.lineTo(e.offsetX,e.offsetY);signEndoCtx.stroke();});c.addEventListener('mouseup',()=>signEndoDraw=false);c.addEventListener('touchstart',e=>{e.preventDefault();signEndoDraw=true;const r=c.getBoundingClientRect(),t=e.touches[0];signEndoCtx.beginPath();signEndoCtx.moveTo(t.clientX-r.left,t.clientY-r.top);},{passive:false});c.addEventListener('touchmove',e=>{e.preventDefault();if(!signEndoDraw)return;const r=c.getBoundingClientRect(),t=e.touches[0];signEndoCtx.lineTo(t.clientX-r.left,t.clientY-r.top);signEndoCtx.stroke();},{passive:false});c.addEventListener('touchend',()=>signEndoDraw=false);}
+function clearSignEndo(){if(signEndoCtx){const c=document.getElementById('signEndo');signEndoCtx.clearRect(0,0,c.width,c.height);}}
+function sellarFirmaEndo(){const el=document.getElementById('signEndoFecha');const sello=new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'})+' '+new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});if(el){el.textContent='Firmado el '+sello+' &mdash; '+(document.getElementById('patientName').value||'Paciente');el.style.display='block';}if(signEndoCtx){const c=document.getElementById('signEndo');signEndoCtx.font='8px Segoe UI';signEndoCtx.fillStyle='#5a7068';signEndoCtx.fillText('Firmado: '+sello,5,c.height-4);}alert('Firma de consentimiento de endodoncia sellada.');}
+setTimeout(initSignEndo,700);
+
+function subirRxEndo(input){
+  Array.from(input.files).forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=e=>{const grid=document.getElementById('endoRxGrid');const div=document.createElement('div');div.className='photo-th';div.innerHTML='<img src="'+e.target.result+'" alt="Rx endodoncia"><div style="position:absolute;bottom:3px;left:3px;right:3px;background:rgba(0,0,0,0.5);color:white;font-size:8px;border-radius:3px;padding:1px 4px;">'+file.name+'</div>';grid.insertBefore(div,grid.lastChild);};
+    reader.readAsDataURL(file);
+  });
+}
+
+function imprimirRefEndo(){
+  const pN=document.getElementById('patientName').value||'Paciente';
+  const diente=document.getElementById('endoDiente').value||'no especificado';
+  const esp=document.getElementById('endoRefEspecialista').value||'Endodoncista';
+  const mot=document.getElementById('endoRefMotivo').value||'Tratamiento de conductos';
+  const obs=document.getElementById('endoRefObs').value||'';
+  const dxP=document.getElementById('endoDxPulpar').value||'-';
+  const dxPe=document.getElementById('endoDxPeriapical').value||'-';
+  const fecha=new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'});
+  const dr=getDoctorInfo();
+  const pw=window.open('','_blank');
+  pw.document.write('<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Referido Endodoncia</title><style>body{font-family:"Segoe UI",Arial,sans-serif;font-size:10pt;color:#1e2d2a;max-width:600px;margin:30px auto;}@page{size:letter;margin:1.4cm}.hdr{border-bottom:2px solid #85b7eb;padding-bottom:8px;margin-bottom:14px;}h1{font-size:12pt;color:#185fa5;margin:0 0 2px;}h2{font-size:10pt;color:#185fa5;margin:14px 0 6px;border-bottom:1px solid #85b7eb;padding-bottom:2px;}.row{margin-bottom:6px;font-size:9.5pt;}.label{font-weight:700;color:#185fa5;font-size:8.5pt;display:block;}.sig{margin-top:24px;display:flex;justify-content:space-between;}.sb{text-align:center;width:45%;}.sl{border-top:1px solid #1e2d2a;margin-top:30px;margin-bottom:4px;}</style></head><body>'+'<div class="hdr"><h1>'+dr.nombre+'</h1><div style="font-size:8pt;color:#5a7068;">C&eacute;dula '+dr.cedula+' &middot; '+dr.direccion+'</div></div>'+'<h2>&#x1F9AC; Referido a Endodoncia</h2>'+'<div class="row"><span class="label">Paciente</span>'+pN+'</div>'+'<div class="row"><span class="label">Fecha</span>'+fecha+'</div>'+'<div class="row"><span class="label">Diente</span>'+diente+'</div>'+'<div class="row"><span class="label">Diagn&oacute;stico pulpar</span>'+dxP+'</div>'+'<div class="row"><span class="label">Diagn&oacute;stico periapical</span>'+dxPe+'</div>'+'<div class="row"><span class="label">Referido a</span>'+esp+'</div>'+'<div class="row"><span class="label">Motivo</span>'+mot+'</div>'+(obs?'<div class="row"><span class="label">Observaciones</span>'+obs+'</div>':'')+'<div class="sig"><div class="sb"><div class="sl"></div><div style="font-size:8.5pt;">'+dr.nombre+'</div><div style="font-size:7.5pt;color:#5a7068;">C&eacute;dula '+dr.cedula+'</div></div><div class="sb"><div class="sl"></div><div style="font-size:8.5pt;">Sello del especialista</div></div></div>'+'<script>window.onload=()=>window.print();<\/script></body></html>');
+  pw.document.close();
+}
+
+function toggleDark(){
+  document.body.classList.toggle('dark');
+  const isDark=document.body.classList.contains('dark');
+  localStorage.setItem('dn_dark',isDark?'1':'0');
+  document.getElementById('darkBtn').textContent=isDark?'☀️':'🌙';
+}
+if(localStorage.getItem('dn_dark')==='1'){document.body.classList.add('dark');document.getElementById('darkBtn').textContent='☀️';}
+
+// ===== SELLAR FIRMA CON FECHA Y HORA =====
+function sellarFirma(){
+  if(!signCanvas)return;
+  const ctx=signCanvas.getContext('2d');
+  const ahora=new Date();
+  const sello=ahora.toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'})+' '+ahora.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+  const el=document.getElementById('signFechaHora');
+  if(el){el.textContent='Firmado digitalmente el '+sello+' — '+( document.getElementById('patientName').value||'Paciente');el.style.display='block';}
+  // Agregar sello al canvas
+  ctx.font='9px Segoe UI';ctx.fillStyle='#5a7068';
+  ctx.fillText('Firmado: '+sello,8,signCanvas.height-6);
+  window._firmaTimestamp=sello;
+  alert('Firma sellada con fecha y hora.');
+}
+
+// ===== APERTURA DE EXPEDIENTE EXISTENTE =====
+function abrirExpedienteExistente(key){
+  const patients=JSON.parse(localStorage.getItem('dn_patients')||'{}');
+  const p=patients[key];if(!p)return;
+  closeModal();
+  // Cambiar a vista nueva consulta con datos del paciente
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelector('[data-view="nueva"]').classList.add('active');
+  document.getElementById('view-nueva').classList.add('active');
+  // Llenar datos
+  document.getElementById('patientName').value=p.name||'';
+  document.getElementById('patientAge').value=p.age||'';
+  document.getElementById('patientSex').value=p.sex||'';
+  document.getElementById('patientPhone').value=p.phone||'';
+  document.getElementById('patientEmail').value=p.email||'';
+  document.getElementById('patientAddress').value=p.address||'';
+  document.getElementById('patientDob').value=p.dob||'';
+  document.getElementById('patientCivil').value=p.civil||'';
+  document.getElementById('patientJob').value=p.job||'';
+  document.getElementById('patientEmergency').value=p.emergency||'';
+  document.getElementById('visitType').value='seguimiento';
+  document.getElementById('visitDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('visitTime').value=new Date().toTimeString().slice(0,5);
+  // Cargar odontograma de evolución
+  if(p.odontoEvolucion?.data)odoData=JSON.parse(JSON.stringify(p.odontoEvolucion.data));
+  renderOdo();
+  // Llenar antecedentes de la última consulta
+  const ult=p.consultas&&p.consultas[0];
+  if(ult){
+    if(ult.antAlergias)document.getElementById('antAlergias').value=ult.antAlergias;
+    if(ult.antHF)document.getElementById('antHF').value=ult.antHF;
+    if(ult.antSis)document.getElementById('antSis').value=ult.antSis;
+    if(ult.antMeds)document.getElementById('antMeds').value=ult.antMeds;
+  }
+  // Ir directo a pestaña 7 evolución
+  goTab('t7');
+}
+
 </script>
 </body>
 </html>
