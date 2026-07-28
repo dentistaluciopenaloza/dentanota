@@ -1,3 +1,4 @@
+
 {
   "LUCIO-MASTER": {
     "nombre": "Lucio Peñaloza (acceso permanente)"
@@ -12,6 +13,18 @@
   },
   "DEMO-03": {
     "nombre": "Prueba 3",
+    "vence": "2026-08-26"
+  },
+  "DEMO-04": {
+    "nombre": "Prueba 4",
+    "vence": "2026-08-26"
+  },
+  "DEMO-05": {
+    "nombre": "Prueba 5",
+    "vence": "2026-08-26"
+  },
+  "DEMO-06": {
+    "nombre": "Prueba 6",
     "vence": "2026-08-26"
   }
 }
