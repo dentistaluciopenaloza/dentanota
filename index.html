@@ -373,11 +373,47 @@ body.adm-no-citas button[onclick="guardarCitaAgenda()"]{display:none!important;}
 
     <!-- PASO 5: FIRMA -->
     <div class="mp-paso" data-paso="5" style="display:none;">
-      <h3 style="font-size:17px;color:var(--vo);margin-bottom:3px;">Tu Firma</h3>
-      <div style="font-size:12px;color:var(--ts);margin-bottom:12px;">Firma en el recuadro de abajo para confirmar que tu información es veraz.</div>
+      <h3 style="font-size:17px;color:var(--vo);margin-bottom:3px;">Consentimiento Informado</h3>
+      
+      <!-- SECCIÓN 1: QUÉ SÍ GARANTIZAMOS -->
+      <div style="background:#e8f5f3;border:1.5px solid #26a69a;border-radius:12px;padding:14px;margin-bottom:14px;font-size:12px;color:#174642;line-height:1.7;">
+        <b style="color:#174642;">✓ El odontólogo se compromete a:</b><br>
+        • Utilizar sus mejores conocimientos y técnicas<br>
+        • Seguir las prácticas profesionales adecuadas<br>
+        • Usar materiales y herramientas de calidad
+      </div>
+      
+      <!-- SECCIÓN 2: ⚠️ LETRAS GRANDES - NO HAY GARANTÍA -->
+      <div style="background:#fff3e0;border:3px solid #ff6f00;border-radius:12px;padding:16px;margin-bottom:14px;text-align:center;">
+        <div style="font-size:16px;font-weight:900;color:#e65100;margin-bottom:12px;line-height:1.4;">
+          ⚠️ NO HAY GARANTÍA DE ÉXITO DEL TRATAMIENTO
+        </div>
+        <div style="font-size:13px;color:#bf360c;font-weight:700;line-height:1.6;">
+          Existe una GARANTÍA DE MEDIOS, no de RESULTADOS.<br>
+          Esto significa que garantizamos hacer bien nuestro trabajo,<br>
+          pero NO podemos garantizar que el resultado sea perfecto<br>
+          para siempre, porque hay factores biológicos que están<br>
+          fuera de nuestro control.
+        </div>
+      </div>
+      
+      <!-- SECCIÓN 3: POR QUÉ NO PODEMOS GARANTIZAR -->
+      <div style="background:#ffebee;border:1.5px solid #e91e63;border-radius:12px;padding:14px;margin-bottom:14px;font-size:12px;color:#880e4f;line-height:1.7;">
+        <b style="color:#880e4f;">El éxito del tratamiento también depende del PACIENTE:</b><br><br>
+        • Si no asiste a limpiezas/revisiones semestrales<br>
+        • Si fuma (debilita dientes y encía)<br>
+        • Si rechina dientes sin tratamiento (bruxismo)<br>
+        • Si muerde cosas duras<br>
+        • Si no mantiene buena higiene oral<br><br>
+        <b>En estos casos, el dentista NO es responsable del fracaso.</b>
+      </div>
+      
+      <!-- CASILLA: Declaración de veracidad -->
       <div style="background:var(--cr);border-radius:12px;padding:12px 14px;font-size:11.5px;color:var(--tx);line-height:1.6;margin-bottom:12px;">
         <label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer;"><input type="checkbox" id="mpDeclaro" style="margin-top:3px;flex-shrink:0;"> <span>Declaro que la información que proporcioné es <b>verdadera y completa</b>. Entiendo que la anestesia y el tratamiento se planean con base en lo que aquí declaro. <b>Reconozco que omitir, falsear o dejar en blanco datos sobre mi salud es de mi entera responsabilidad.</b></span></label>
       </div>
+      
+      <!-- FIRMA -->
       <canvas id="mpSignCanvas" width="560" height="150" style="width:100%;height:150px;background:#fff;border:1.5px solid var(--bd);border-radius:14px;touch-action:none;cursor:crosshair;"></canvas>
       <div id="mpSignFecha" style="font-size:10px;color:var(--ts);text-align:center;margin:4px 0 12px;display:none;"></div>
       <div style="display:flex;gap:8px;margin-bottom:14px;"><button class="btn btn-s btn-sm" onclick="mpBorrarFirma()">Borrar firma</button></div>
