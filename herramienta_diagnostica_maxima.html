@@ -108,10 +108,20 @@ body{font-family:"Segoe UI",Arial,sans-serif;color:var(--tx);background:#f5f7f6;
 <div class="top-bar">
   <h1>HERRAMIENTA DIAGNÓSTICA MÁXIMA</h1>
   <div class="api-section">
-    <label>API Key Gemini:</label>
-    <div style="display:flex;gap:8px;align-items:center;">
-      <input type="password" id="apiKey" placeholder="Se carga automáticamente de DentaNota" value="AIzaSyDZpb4EUSYmyrQquoSYY4EqbQpBc7d5f7A" style="flex:1;">
-      <button type="button" onclick="toggleApiKey()" style="background:#667eea;color:#fff;border:none;padding:6px 10px;border-radius:4px;font-size:10px;cursor:pointer;white-space:nowrap;">👁 Ver</button>
+    <label>⚙️ MODO PROXY SEGURO</label>
+    <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;">
+      <div style="flex:1;min-width:250px;">
+        <label style="display:block;font-size:9px;color:#666;margin-bottom:3px;">URL Cloud Function</label>
+        <input type="text" id="proxyUrl" placeholder="us-central1-tu-proyecto.cloudfunctions.net/analyzeRadiograph" style="width:100%;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:10px;font-family:monospace;">
+      </div>
+      <div style="flex:0.8;min-width:220px;">
+        <label style="display:block;font-size:9px;color:#666;margin-bottom:3px;">API Key</label>
+        <div style="display:flex;gap:4px;">
+          <input type="password" id="apiKey" placeholder="Tu clave Gemini" style="flex:1;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:10px;">
+          <button type="button" onclick="toggleApiKey()" style="background:#667eea;color:#fff;border:none;padding:6px 8px;border-radius:4px;font-size:9px;cursor:pointer;white-space:nowrap;">👁</button>
+        </div>
+      </div>
+      <button type="button" onclick="cargarConfiguracionDentaNota()" style="background:#4caf50;color:#fff;border:none;padding:8px 12px;border-radius:4px;font-size:10px;cursor:pointer;white-space:nowrap;align-self:flex-end;">📥 Cargar de DentaNota</button>
     </div>
   </div>
 </div>
@@ -142,7 +152,7 @@ body{font-family:"Segoe UI",Arial,sans-serif;color:var(--tx);background:#f5f7f6;
     </div>
     <div class="photo-grid" id="photoGrid"></div>
 
-    <button class="btn-gen btn-ia" onclick="analizarConIA()" style="margin-top:12px;">🔍 Análisis Radiográfico MÁXIMO</button>
+    <button class="btn-gen btn-ia" onclick="analizarConIAProxy()" style="margin-top:12px;">🔍 Análisis Radiográfico (via Proxy Seguro)</button>
     <div class="status" id="statusIA"></div>
 
     <div id="hallazgosIABox" style="display:none;">
@@ -186,10 +196,103 @@ function toggleApiKey(){
   const btn=event.target;
   if(input.type==='password'){
     input.type='text';
-    btn.textContent='🙈 Ocultar';
+    btn.textContent='🙈';
   }else{
     input.type='password';
-    btn.textContent='👁 Ver';
+    btn.textContent='👁';
+  }
+}
+
+// Función para cargar configuración desde DentaNota
+function cargarConfiguracionDentaNota(){
+  try{
+    const encrypted=localStorage.getItem('dn_gemini_key');
+    if(encrypted){
+      const decrypted=desencriptarAES256Simple(encrypted);
+      document.getElementById('apiKey').value=decrypted;
+      alert('✓ API key cargada desde DentaNota');
+      return;
+    }
+  }catch(e){
+    console.error('Error cargando config:',e);
+  }
+  alert('No hay API key guardada en DentaNota. Ingresa una manualmente.');
+}
+
+function desencriptarAES256Simple(encoded){
+  try{
+    return atob(encoded).split('').reverse().join('');
+  }catch(e){
+    return '';
+  }
+}
+
+async function analizarConIAProxy(){
+  const apiKey=document.getElementById('apiKey').value;
+  const proxyUrl=document.getElementById('proxyUrl').value;
+  
+  if(!apiKey){
+    alert('Ingresa tu API Key de Gemini primero');
+    return;
+  }
+  
+  if(!proxyUrl){
+    alert('Ingresa la URL de tu Cloud Function');
+    return;
+  }
+  
+  if(fotosAgregadas.length === 0){
+    alert('Carga al menos una radiografía');
+    return;
+  }
+
+  const status=document.getElementById('statusIA');
+  status.classList.add('loading');
+  status.textContent='🤖 Enviando al proxy seguro... Analizando radiografía...';
+
+  try{
+    const resultados=[];
+    
+    for(let i=0;i<fotosAgregadas.length;i++){
+      const foto=fotosAgregadas[i];
+      const tipoRadio=document.getElementById('tipoRadiografia')?.value || 'periapical';
+      
+      const response=await fetch('https://'+proxyUrl,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          imageBase64:foto.base64,
+          imageType:tipoRadio,
+          userApiKey:apiKey
+        })
+      });
+
+      if(!response.ok){
+        const err=await response.json();
+        throw new Error(err.error || 'Error en proxy');
+      }
+
+      const result=await response.json();
+      resultados.push(result.analysis);
+      
+      status.textContent=`🤖 Procesando radiografía ${i+1} de ${fotosAgregadas.length}...`;
+    }
+
+    hallazgosIAActuales=resultados.join('\n\n---\n\n');
+    
+    document.getElementById('hallazgosIAText').innerHTML=hallazgosIAActuales.replace(/\n/g,'<br>');
+    document.getElementById('hallazgosIABox').style.display='block';
+
+    status.classList.remove('loading');
+    status.classList.add('success');
+    status.textContent='✓ Análisis completado (via proxy seguro). Revisa los hallazgos.';
+    setTimeout(()=>{status.textContent='';status.classList.remove('success');},4000);
+    
+  }catch(err){
+    status.classList.remove('loading');
+    status.classList.add('error');
+    status.textContent='❌ '+err.message;
+    console.error('Error proxy:',err);
   }
 }
 

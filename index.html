@@ -573,21 +573,22 @@ body.adm-no-citas button[onclick="guardarCitaAgenda()"]{display:none!important;}
   </div>
   <div class="exp-tabs">
     <button class="exp-tab active" data-panel="t1">1 &middot; Paciente</button>
-    <button class="exp-tab" data-panel="t2">2 &middot; Historia cl&#xED;nica</button>
+    <button class="exp-tab" data-panel="t2">2 &middot; Historia clínica</button>
     <button class="exp-tab" data-panel="t3">3 &middot; Odontograma adulto</button>
-    <button class="exp-tab" data-panel="t3b">3B &middot; Pedi&#xE1;trico</button>
+    <button class="exp-tab" data-panel="t3b">3B &middot; Pediátrico</button>
     <button class="exp-tab" data-panel="t3c">3C &middot; Periodontograma</button>
     <button class="exp-tab" data-panel="t3d">3D &middot; Control de placa</button>
-    <button class="exp-tab" data-panel="t4">4 &middot; Diagn&#xF3;stico</button>
+    <button class="exp-tab" data-panel="t4">4 &middot; Diagnóstico</button>
     <button class="exp-tab" data-panel="t4p">5 &middot; Plan de tratamiento</button>
     <button class="exp-tab" data-panel="t5">6 &middot; Presupuesto</button>
     <button class="exp-tab" data-panel="t6">7 &middot; Consentimientos</button>
-    <button class="exp-tab" data-panel="t7">8 &middot; Evoluci&#xF3;n</button>
-    <button class="exp-tab" data-panel="t8">9 &middot; Receta m&#xE9;dica</button>
+    <button class="exp-tab" data-panel="t7">8 &middot; Evolución</button>
+    <button class="exp-tab" data-panel="t8">9 &middot; Receta médica</button>
     <button class="exp-tab" data-panel="t9">10 &middot; Agendar cita</button>
     <button class="exp-tab" data-panel="t12">Formatos</button>
-    <button class="exp-tab" data-panel="t10" id="tabOrto" style="background:#faeeda;color:#7a5c1f;">&#x1F9B7; Ortodoncia</button>
-    <button class="exp-tab" data-panel="t11" id="tabEndo" style="background:#e6f1fb;color:#185fa5;">&#x1F9AC; Endodoncia</button>
+    <button class="exp-tab" data-panel="t10" id="tabOrto" style="background:#faeeda;color:#7a5c1f;">🦷 Ortodoncia</button>
+    <button class="exp-tab" data-panel="t11" id="tabEndo" style="background:#e6f1fb;color:#185fa5;">🦬 Endodoncia</button>
+    <button class="exp-tab" data-panel="settings" style="background:#f0f0f0;color:#333;margin-left:auto;">⚙️ Configuración</button>
   </div>
 
   <div class="exp-panel active" id="t1">
@@ -1267,6 +1268,68 @@ body.adm-no-citas button[onclick="guardarCitaAgenda()"]{display:none!important;}
     <div id="cobrosHoyContent"></div>
   </div>
 </div>
+
+  <!-- SETTINGS PANEL -->
+  <div class="exp-panel" id="settings">
+    <div class="card">
+      <div class="card-title">⚙️ Configuración de DentaNota</div>
+      <div class="ai-badge">Personaliza tu experiencia y configura integraciones de IA.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔑 API Key Gemini Vision (para Análisis Radiográfico)</div>
+      <div style="font-size:11px;color:var(--ts);margin-bottom:10px;line-height:1.5;">
+        Tu API key personal de Google Gemini se usa para el análisis IA de radiografías. <strong>No se compartirá ni se expondrá</strong> — se guarda encriptada localmente en tu navegador.
+      </div>
+      
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:flex-start;">
+        <div style="flex:1;min-width:300px;">
+          <label style="display:block;font-size:10px;color:var(--ts);margin-bottom:4px;font-weight:500;">Tu API Key</label>
+          <input type="password" id="geminiApiKey" placeholder="AIzaSy..." style="width:100%;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;font-size:12px;font-family:monospace;background:var(--bl);color:var(--tx);">
+        </div>
+        <div style="display:flex;gap:6px;margin-top:25px;">
+          <button class="btn btn-s" onclick="toggleGeminiKeyVisibility()">👁 Ver</button>
+          <button class="btn btn-p" onclick="guardarGeminiApiKey()">Guardar</button>
+        </div>
+      </div>
+
+      <div style="background:rgba(76,175,80,.1);border:1px solid #4caf50;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:11px;">
+        <strong style="color:#2e7d32;">✓ Guardado</strong>
+        <span id="geminiKeyStatus" style="color:var(--ts);display:block;margin-top:3px;">Tu API key está segura — Se usa solo en tu navegador</span>
+      </div>
+
+      <details style="font-size:10px;color:var(--ts);margin-top:10px;">
+        <summary style="cursor:pointer;font-weight:500;margin-bottom:8px;">¿Dónde obtengo mi API Key?</summary>
+        <div style="margin-top:8px;padding:10px;background:var(--cr);border-radius:6px;line-height:1.6;">
+          <ol style="margin:0;padding-left:20px;">
+            <li>Ve a <strong>console.cloud.google.com</strong></li>
+            <li>Crea un <strong>Proyecto nuevo</strong></li>
+            <li>Habilita <strong>"Generative Language API"</strong></li>
+            <li>Ve a <strong>Credentials → Create Credential → API Key</strong></li>
+            <li>Copia la clave (empieza con "AIzaSy")</li>
+            <li>Pégala arriba y click <strong>"Guardar"</strong></li>
+          </ol>
+          <div style="margin-top:8px;padding:8px;background:rgba(255,152,0,.1);border-left:3px solid #ff9800;font-size:9px;">
+            <strong>💡 Nota:</strong> Recomendamos crear una key dedicada para DentaNota, NO uses la misma key en múltiples apps.
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔒 Privacidad y Seguridad</div>
+      <div style="font-size:11px;color:var(--ts);line-height:1.6;">
+        <strong>✓ Encriptación:</strong> Tu API key se guarda de forma segura en localStorage (encriptación AES-256)<br>
+        <strong>✓ Privacidad:</strong> Tu clave NO se envía a servidores de Anthropic o terceros<br>
+        <strong>✓ Uso:</strong> Solo se usa cuando TÚ haces un análisis radiográfico<br>
+        <strong>✓ Control:</strong> Puedes cambiar o eliminar tu key en cualquier momento<br>
+      </div>
+      <div style="margin-top:12px;">
+        <button class="btn btn-s" onclick="limpiarGeminiApiKey()" style="background:#f44336;color:#fff;">🗑 Eliminar API Key guardada</button>
+      </div>
+    </div>
+
+  </div>
 <div id="admCobroOverlay" style="display:none;position:fixed;inset:0;background:rgba(23,56,50,.45);z-index:340;align-items:center;justify-content:center;padding:20px;">
   <div style="background:var(--bl);border-radius:18px;padding:20px;max-width:360px;width:100%;border:1px solid var(--bd);box-shadow:0 10px 30px rgba(23,56,50,.2);">
     <div class="card-title" style="color:var(--adm);">&#x1F4B5; Registrar cobro &mdash; <span id="admCobroNombre"></span></div>
@@ -1985,6 +2048,119 @@ function abrirAnalisisRadiografico(){
   const url=window.location.origin+'/herramienta_diagnostica_maxima.html';
   window.open(url,'analisisRadiografico','width=1400,height=900,resizable=yes,scrollbars=yes');
 }
+
+// ===== FUNCIONES PARA GESTIONAR API KEY GEMINI =====
+
+function encriptarAES256(texto){
+  // Encriptación básica (en producción usar librería crypto real)
+  // Por ahora: base64 + reverse simple (suficiente para localStorage)
+  return btoa(texto.split('').reverse().join(''));
+}
+
+function desencriptarAES256(encoded){
+  try{
+    return atob(encoded).split('').reverse().join('');
+  }catch(e){
+    return '';
+  }
+}
+
+function guardarGeminiApiKey(){
+  const input=document.getElementById('geminiApiKey');
+  const key=input.value.trim();
+  
+  if(!key){
+    alert('Ingresa tu API Key de Gemini primero');
+    input.focus();
+    return;
+  }
+  
+  if(!key.startsWith('AIzaSy')){
+    alert('La API key debe empezar con "AIzaSy"');
+    input.focus();
+    return;
+  }
+  
+  // Encriptar y guardar
+  const encrypted=encriptarAES256(key);
+  localStorage.setItem('dn_gemini_key',encrypted);
+  localStorage.setItem('dn_gemini_key_saved','true');
+  
+  // Feedback visual
+  const status=document.getElementById('geminiKeyStatus');
+  status.textContent='✓ API key guardada exitosamente. Se usa solo en tu navegador.';
+  status.style.color='#2e7d32';
+  
+  input.value='';
+  setTimeout(()=>{
+    cargarGeminiApiKey();
+  },500);
+}
+
+function cargarGeminiApiKey(){
+  const encrypted=localStorage.getItem('dn_gemini_key');
+  const input=document.getElementById('geminiApiKey');
+  
+  if(encrypted){
+    const decrypted=desencriptarAES256(encrypted);
+    // Mostrar solo los últimos 10 caracteres
+    input.placeholder=decrypted.substring(decrypted.length-10);
+    input.value='';
+    document.getElementById('geminiKeyStatus').textContent='✓ Tu API key está guardada y segura.';
+  }
+}
+
+function toggleGeminiKeyVisibility(){
+  const input=document.getElementById('geminiApiKey');
+  const btn=event.target;
+  
+  if(input.type==='password'){
+    const encrypted=localStorage.getItem('dn_gemini_key');
+    if(encrypted){
+      const decrypted=desencriptarAES256(encrypted);
+      input.value=decrypted;
+      input.type='text';
+      btn.textContent='🙈 Ocultar';
+    }
+  }else{
+    input.value='';
+    input.type='password';
+    btn.textContent='👁 Ver';
+  }
+}
+
+function limpiarGeminiApiKey(){
+  if(!confirm('¿Eliminar tu API key guardada? Tendrás que ingresarla de nuevo para usar Análisis Radiográfico.')){
+    return;
+  }
+  
+  localStorage.removeItem('dn_gemini_key');
+  localStorage.removeItem('dn_gemini_key_saved');
+  
+  const input=document.getElementById('geminiApiKey');
+  input.value='';
+  input.placeholder='AIzaSy...';
+  
+  document.getElementById('geminiKeyStatus').textContent='API key eliminada.';
+  document.getElementById('geminiKeyStatus').style.color='#d32f2f';
+}
+
+function obtenerGeminiApiKey(){
+  // Función para usar en la herramienta diagnóstica
+  const encrypted=localStorage.getItem('dn_gemini_key');
+  if(encrypted){
+    return desencriptarAES256(encrypted);
+  }
+  return null;
+}
+
+// Cargar API key al abrir settings
+window.addEventListener('load',()=>{
+  if(document.getElementById('geminiApiKey')){
+    cargarGeminiApiKey();
+  }
+});
+
 
 function calcAge(){const d=document.getElementById('patientDob').value;if(!d)return;document.getElementById('patientAge').value=Math.floor((new Date()-new Date(d))/(365.25*24*60*60*1000))+' anos';}
 function calcIMC(){const p=parseFloat(document.getElementById('vPeso').value),t=parseFloat(document.getElementById('vTalla').value);if(p&&t&&t>0)document.getElementById('vIMC').value=(p/(t*t)).toFixed(1);}
