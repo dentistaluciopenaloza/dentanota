@@ -3935,9 +3935,12 @@ let _mpEnfermeraActiva=false;
 function abrirModoPaciente(){
   // Reset de estado del formulario del paciente
   ['mpNombre','mpDob','mpTel','mpTrato','mpMotivo'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  // NUEVOS CAMPOS - Reset también
+  ['mpEstadoCivil','mpOcupacion','mpCorreo','mpEmergencia','mpDomicilio','mpAntHered','mpAlergias','mpMeds','mpCirugia','mpSistem','mpGineco','mpDental'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  
   _mpSexo='';_mpFoto=null;_mpFirmado=false;
   document.querySelectorAll('#mpSexo .mp-chip').forEach(c=>c.classList.remove('on'));
-  const fb=document.getElementById('mpFotoBox');if(fb)fb.innerHTML='<div style="font-size:40px;">\ud83e\udd33</div><div style="font-size:11px;margin-top:5px;text-align:center;">Tocar para<br>tomar foto</div>';
+  const fb=document.getElementById('mpFotoBox');if(fb)fb.innerHTML='<div style="font-size:40px;">🤷</div><div style="font-size:11px;margin-top:5px;text-align:center;">Tocar para<br>tomar foto</div>';
   document.getElementById('mpFotoDel').style.display='none';
   const dc=document.getElementById('mpDeclaro');if(dc)dc.checked=false;
   // Limpiar condState y detalles para empezar de cero este paciente
@@ -3945,6 +3948,58 @@ function abrirModoPaciente(){
   mpRenderAntecedentes();
   mpRenderHabitos();
   const ac=document.getElementById('mpAcepto');if(ac)ac.checked=false;
+  
+  // === CARGAR DATOS DEL PACIENTE EXISTENTE EN LA TABLET ===
+  const pName=document.getElementById('patientName')?.value?.trim();
+  if(pName){
+    // Datos básicos
+    const pDob=document.getElementById('patientDob')?.value;
+    const pSex=document.getElementById('patientSex')?.value;
+    const pTel=document.getElementById('patientPhone')?.value;
+    const pCivil=document.getElementById('patientCivil')?.value;
+    const pJob=document.getElementById('patientJob')?.value;
+    const pEmail=document.getElementById('patientEmail')?.value;
+    const pAddr=document.getElementById('patientAddress')?.value;
+    const pEmerg=document.getElementById('patientEmergency')?.value;
+    
+    // Cargar en tablet
+    const e_nom=document.getElementById('mpNombre');if(e_nom)e_nom.value=pName;
+    const e_dob=document.getElementById('mpDob');if(e_dob&&pDob)e_dob.value=pDob;
+    const e_tel=document.getElementById('mpTel');if(e_tel&&pTel)e_tel.value=pTel;
+    const e_civ=document.getElementById('mpEstadoCivil');if(e_civ&&pCivil)e_civ.value=pCivil;
+    const e_job=document.getElementById('mpOcupacion');if(e_job&&pJob)e_job.value=pJob;
+    const e_email=document.getElementById('mpCorreo');if(e_email&&pEmail)e_email.value=pEmail;
+    const e_addr=document.getElementById('mpDomicilio');if(e_addr&&pAddr)e_addr.value=pAddr;
+    const e_emerg=document.getElementById('mpEmergencia');if(e_emerg&&pEmerg)e_emerg.value=pEmerg;
+    
+    // Sexo (chips)
+    if(pSex){
+      let chipVal='';
+      if(pSex.toLowerCase().includes('masculino')||pSex.toLowerCase().includes('hombre'))chipVal='Hombre';
+      else if(pSex.toLowerCase().includes('femenino')||pSex.toLowerCase().includes('mujer'))chipVal='Mujer';
+      if(chipVal){
+        document.querySelectorAll('#mpSexo .mp-chip').forEach(c=>{
+          if(c.dataset.v===chipVal){c.classList.add('on');_mpSexo=chipVal;}
+        });
+      }
+    }
+    
+    // ANTECEDENTES - Cargar desde la última consulta
+    const key=pName.toLowerCase().trim();
+    const patients=JSON.parse(localStorage.getItem('dn_patients')||'{}');
+    const p=patients[key];
+    if(p&&p.consultas&&p.consultas.length>0){
+      const ult=p.consultas[0];
+      const e_hered=document.getElementById('mpAntHered');if(e_hered&&ult.antHF)e_hered.value=ult.antHF;
+      const e_alerg=document.getElementById('mpAlergias');if(e_alerg&&ult.antAlergias)e_alerg.value=ult.antAlergias;
+      const e_meds=document.getElementById('mpMeds');if(e_meds&&ult.antMeds)e_meds.value=ult.antMeds;
+      const e_cirug=document.getElementById('mpCirugia');if(e_cirug&&ult.antCirugias)e_cirug.value=ult.antCirugias;
+      const e_sist=document.getElementById('mpSistem');if(e_sist&&ult.antSis)e_sist.value=ult.antSis;
+      const e_gine=document.getElementById('mpGineco');if(e_gine&&ult.antGineco)e_gine.value=ult.antGineco;
+      const e_dent=document.getElementById('mpDental');if(e_dent&&ult.antDental)e_dent.value=ult.antDental;
+    }
+  }
+  
   document.getElementById('pacienteOverlay').style.display='block';
   window.scrollTo(0,0);
   mpIr(0);
