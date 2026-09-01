@@ -369,7 +369,7 @@ body.adm-no-citas button[onclick="guardarCitaAgenda()"]{display:none!important;}
       <h3 style="font-size:17px;color:var(--vo);margin-bottom:3px;">Hábitos y sustancias</h3>
       <div style="background:#fbf1ee;border:1.5px solid #e0b8ac;border-radius:14px;padding:13px 15px;font-size:12px;color:#9a5342;line-height:1.55;margin:12px 0 14px;"><b style="color:#7d3e30;">⚠️ Muy importante para su seguridad:</b> Si consume alguna droga (marihuana, cocaína, cristal/piedra) o tranquilizantes como clonazepam, <b>dígalo con la verdad</b>. Estas sustancias alteran la anestesia y pueden complicar seriamente su tratamiento. Es <b>estrictamente confidencial</b> y solo sirve para cuidarle. No le juzgaremos.</div>
       <div id="mpHabitos"></div>
-      <div class="mp-btnrow"><button class="btn btn-s" onclick="mpIr(3)">← Atrás</button><button class="btn btn-p mp-next" onclick="mpValidarPaso3()">Siguiente →</button></div>
+      <div class="mp-btnrow"><button class="btn btn-s" onclick="mpIr(3)">← Atrás</button><button class="btn btn-p mp-next" onclick="mpValidarPaso4()">Siguiente →</button></div>
     </div>
 
     <!-- PASO 5: FIRMA -->
@@ -4271,6 +4271,16 @@ function mpValidarPaso3(){
     }
   }
   mpIr(4);
+}
+function mpValidarPaso4(){
+  // Validación para Paso 4 (Hábitos) antes de ir a Paso 5 (Firma)
+  const sinResp=MP_HABITOS.filter(h=>condState[h.id]===undefined);
+  if(sinResp.length){
+    if(!confirm('Dejó sin responder algunas preguntas importantes sobre hábitos y sustancias.\n\n¿Está seguro de continuar? (Puede tocar Cancelar para responder ahora)')){
+      return;
+    }
+  }
+  mpIr(5);
 }
 function mpCargarFoto(input){
   const file=input.files&&input.files[0];if(!file)return;
