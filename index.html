@@ -345,15 +345,41 @@ body.adm-no-citas button[onclick="guardarCitaAgenda()"]{display:none!important;}
     <div class="mp-paso" data-paso="2" style="display:none;">
       <h3 style="font-size:17px;color:var(--vo);margin-bottom:3px;">Datos Personales</h3>
       <div style="font-size:12px;color:var(--ts);margin-bottom:16px;">Por favor complete sus datos. Toque cada campo para escribir.</div>
+      
+      <!-- FILA 1: Nombre -->
       <div class="mp-fld"><label>Nombre completo *</label><input type="text" id="mpNombre" placeholder="Su nombre completo" oninput="mpGuardarEnLocal()"></div>
+      
+      <!-- FILA 2: Fecha nacimiento y Teléfono -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="mp-fld"><label>Fecha de nacimiento</label><input type="text" id="mpDob" placeholder="DD/MM/AAAA" oninput="mpGuardarEnLocal()"></div>
-        <div class="mp-fld"><label>Tel&#xE9;fono</label><input type="tel" id="mpTel" placeholder="10 did="mpTel" placeholder="10 d&#xED;gitos"#xED;gitos" oninput="mpGuardarEnLocal()"></div>
+        <div class="mp-fld"><label>Teléfono *</label><input type="tel" id="mpTel" placeholder="10 dígitos" oninput="mpGuardarEnLocal()"></div>
       </div>
-      <div class="mp-fld"><label>Sexo biol&#xF3;gico</label><div class="mp-chips" id="mpSexo"><span class="mp-chip" data-v="Hombre">Hombre</span><span class="mp-chip" data-v="Mujer">Mujer</span><span class="mp-chip" data-v="Intersexual">Intersexual</span></div></div>
-      <div class="mp-fld"><label>&#xBF;C&#xF3;mo prefiere que le llamemos? (opcional)</label><input type="text" id="mpTrato" placeholder="Nombre o trato" oninput="mpGuardarEnLocal()"></div>
-      <div class="mp-fld"><label>Motivo de su visita (opcional)</label><input type="text" id="mpMotivo" placeholder="&#xBF;Por qu&#xE9; nos visita?"></div>
-      <div class="mp-btnrow"><button class="btn btn-s" onclick="mpIr(1)">&#x2190; Atr&#xE1;s</button><button class="btn btn-p mp-next" onclick="mpIr(3)">Siguiente &#x2192;</button></div>
+      
+      <!-- FILA 3: Sexo y Estado Civil -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="mp-fld"><label>Sexo biológico</label><div class="mp-chips" id="mpSexo"><span class="mp-chip" data-v="Hombre">Hombre</span><span class="mp-chip" data-v="Mujer">Mujer</span><span class="mp-chip" data-v="Intersexual">Intersexual</span></div></div>
+        <div class="mp-fld"><label>Estado civil</label><select id="mpEstadoCivil" oninput="mpGuardarEnLocal()" style="width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;font-size:14px;"><option value="">---</option><option value="Soltero/a">Soltero/a</option><option value="Casado/a">Casado/a</option><option value="Divorciado/a">Divorciado/a</option><option value="Viudo/a">Viudo/a</option><option value="Pareja">Pareja estable</option></select></div>
+      </div>
+      
+      <!-- FILA 4: Ocupación y Trato -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="mp-fld"><label>Ocupación</label><input type="text" id="mpOcupacion" placeholder="Profesión/Oficio" oninput="mpGuardarEnLocal()"></div>
+        <div class="mp-fld"><label>¿Cómo prefiere que le llamemos?</label><input type="text" id="mpTrato" placeholder="Nombre o trato" oninput="mpGuardarEnLocal()"></div>
+      </div>
+      
+      <!-- FILA 5: Correo -->
+      <div class="mp-fld"><label>Correo (opcional)</label><input type="email" id="mpCorreo" placeholder="correo@ejemplo.com" oninput="mpGuardarEnLocal()"></div>
+      
+      <!-- FILA 6: Contacto de emergencia -->
+      <div class="mp-fld"><label>Contacto de emergencia</label><input type="text" id="mpEmergencia" placeholder="Nombre y teléfono" oninput="mpGuardarEnLocal()"></div>
+      
+      <!-- FILA 7: Domicilio -->
+      <div class="mp-fld"><label>Domicilio</label><input type="text" id="mpDomicilio" placeholder="Calle, número, ciudad" oninput="mpGuardarEnLocal()"></div>
+      
+      <!-- FILA 8: Motivo de visita -->
+      <div class="mp-fld"><label>Motivo de su visita (opcional)</label><input type="text" id="mpMotivo" placeholder="¿Por qué nos visita?"></div>
+      
+      <div class="mp-btnrow"><button class="btn btn-s" onclick="mpIr(1)">← Atrás</button><button class="btn btn-p mp-next" onclick="mpIr(3)">Siguiente →</button></div>
     </div>
 
     <!-- PASO 3: ANTECEDENTES -->
@@ -373,15 +399,60 @@ body.adm-no-citas button[onclick="guardarCitaAgenda()"]{display:none!important;}
     </div>
 
     <!-- PASO 5: FIRMA -->
+    <!-- PASO 5: CONSENTIMIENTO Y FIRMA -->
     <div class="mp-paso" data-paso="5" style="display:none;">
-      <h3 style="font-size:17px;color:var(--vo);margin-bottom:3px;">Tu Firma</h3>
-      <div style="font-size:12px;color:var(--ts);margin-bottom:12px;">Firma en el recuadro de abajo para confirmar que tu información es veraz.</div>
-      <div style="background:var(--cr);border-radius:12px;padding:12px 14px;font-size:11.5px;color:var(--tx);line-height:1.6;margin-bottom:12px;">
+      <h3 style="font-size:17px;color:var(--vo);margin-bottom:3px;">Consentimiento Informado</h3>
+      
+      <!-- SECCIÓN 1: QUÉ SÍ GARANTIZAMOS -->
+      <div style="background:#e8f5f3;border:1.5px solid #26a69a;border-radius:12px;padding:14px;margin-bottom:14px;font-size:12px;color:#174642;line-height:1.7;">
+        <b style="color:#174642;">✓ El odontólogo se compromete a:</b><br>
+        • Utilizar sus mejores conocimientos y técnicas<br>
+        • Seguir las mejores prácticas profesionales<br>
+        • Usar materiales y herramientas de calidad
+      </div>
+      
+      <!-- SECCIÓN 2: ⚠️ LETRAS GRANDES - NO HAY GARANTÍA -->
+      <div style="background:#fff3e0;border:3px solid #ff6f00;border-radius:12px;padding:16px;margin-bottom:14px;text-align:center;">
+        <div style="font-size:16px;font-weight:900;color:#e65100;margin-bottom:12px;line-height:1.4;">
+          ⚠️ NO HAY GARANTÍA DE ÉXITO DEL TRATAMIENTO
+        </div>
+        <div style="font-size:13px;color:#bf360c;font-weight:700;line-height:1.6;">
+          Existe una GARANTÍA DE MEDIOS, no de RESULTADOS.<br>
+          <br>
+          Esto significa que garantizamos hacer bien nuestro trabajo,<br>
+          pero NO podemos garantizar que el resultado sea perfecto<br>
+          para siempre, porque hay factores biológicos que están<br>
+          fuera de nuestro control.
+        </div>
+      </div>
+      
+      <!-- SECCIÓN 3: POR QUÉ NO PODEMOS GARANTIZAR -->
+      <div style="background:#ffebee;border:1.5px solid #e91e63;border-radius:12px;padding:14px;margin-bottom:14px;font-size:12px;color:#880e4f;line-height:1.7;">
+        <b style="color:#880e4f;">El éxito del tratamiento también depende del PACIENTE:</b><br><br>
+        • Si no asiste a limpiezas/revisiones semestrales<br>
+        • Si fuma (debilita dientes y encía)<br>
+        • Si rechina los dientes sin tratamiento (bruxismo)<br>
+        • Si muerde cosas duras<br>
+        • Si no mantiene buena higiene oral<br><br>
+        <b>En estos casos, el dentista NO es responsable del fracaso.</b>
+      </div>
+      
+      <!-- CASILLA 1: Entiendo que NO hay garantía -->
+      <div style="background:var(--cr);border-radius:12px;padding:12px 14px;font-size:11.5px;color:var(--tx);line-height:1.6;margin-bottom:12px;border:1.5px solid var(--bd);">
+        <label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer;"><input type="checkbox" id="mpEntiendoGarantia" style="margin-top:3px;flex-shrink:0;"> <span>Entiendo y acepto que <b>NO hay garantía de éxito</b> del tratamiento, solo una <b>garantía de medios</b>. Comprendo que el resultado también depende de mis hábitos y cuidados.</span></label>
+      </div>
+      
+      <!-- CASILLA 2: Declaración de veracidad -->
+      <div style="background:var(--cr);border-radius:12px;padding:12px 14px;font-size:11.5px;color:var(--tx);line-height:1.6;margin-bottom:12px;border:1.5px solid var(--bd);">
         <label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer;"><input type="checkbox" id="mpDeclaro" style="margin-top:3px;flex-shrink:0;"> <span>Declaro que la información que proporcioné es <b>verdadera y completa</b>. Entiendo que la anestesia y el tratamiento se planean con base en lo que aquí declaro. <b>Reconozco que omitir, falsear o dejar en blanco datos sobre mi salud es de mi entera responsabilidad.</b></span></label>
       </div>
+      
+      <!-- FIRMA -->
+      <div style="font-size:12px;font-weight:700;color:var(--vo);margin-bottom:8px;">Firma digital del paciente — con el dedo o mouse directamente en pantalla</div>
       <canvas id="mpSignCanvas" width="560" height="150" style="width:100%;height:150px;background:#fff;border:1.5px solid var(--bd);border-radius:14px;touch-action:none;cursor:crosshair;"></canvas>
       <div id="mpSignFecha" style="font-size:10px;color:var(--ts);text-align:center;margin:4px 0 12px;display:none;"></div>
       <div style="display:flex;gap:8px;margin-bottom:14px;"><button class="btn btn-s btn-sm" onclick="mpBorrarFirma()">Borrar firma</button></div>
+      
       <div class="mp-btnrow"><button class="btn btn-s" onclick="mpIr(4)">← Atrás</button><button class="btn btn-p" onclick="mpTerminar()">✓ Terminar</button></div>
     </div>
 
@@ -3990,7 +4061,7 @@ let _mpEnfermeraActiva=false;
 
 function abrirModoPaciente(){
   // Reset de estado del formulario del paciente
-  ['mpNombre','mpDob','mpTel','mpTrato','mpMotivo'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['mpNombre','mpDob','mpTel','mpTrato','mpMotivo','mpEstadoCivil','mpOcupacion','mpCorreo','mpEmergencia','mpDomicilio'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   _mpSexo='';_mpFoto=null;_mpFirmado=false;
   document.querySelectorAll('#mpSexo .mp-chip').forEach(c=>c.classList.remove('on'));
   const fb=document.getElementById('mpFotoBox');if(fb)fb.innerHTML='<div style="font-size:40px;">\ud83e\udd33</div><div style="font-size:11px;margin-top:5px;text-align:center;">Tocar para<br>tomar foto</div>';
@@ -4327,8 +4398,11 @@ function mpInitFirma(){
 function mpBorrarFirma(){if(_mpSignCtx){_mpSignCtx.clearRect(0,0,_mpSignCanvas.width,_mpSignCanvas.height);_mpFirmado=false;document.getElementById('mpSignFecha').style.display='none';}}
 function mpTerminar(){
   const nombre=document.getElementById('mpNombre').value.trim();
-  if(!nombre){alert('Por favor escriba su nombre completo (paso 1).');mpIr(1);return;}
-  if(!document.getElementById('mpDeclaro').checked){alert('Por favor lea y marque la casilla de declaraci\u00f3n para poder firmar.');return;}
+  if(!nombre){alert('Por favor escriba su nombre completo.');mpIr(2);return;}
+  const tel=document.getElementById('mpTel').value.trim();
+  if(!tel){alert('Por favor escriba su teléfono.');mpIr(2);return;}
+  if(!document.getElementById('mpEntiendoGarantia').checked){alert('Por favor marque que entiende que NO hay garantía de éxito, solo de medios.');return;}
+  if(!document.getElementById('mpDeclaro').checked){alert('Por favor lea y marque la declaración de veracidad.');return;}
   if(!_mpFirmado){alert('Por favor firme con el dedo en el recuadro antes de terminar.');return;}
   // Sellar firma con fecha/hora
   const ahora=new Date();
@@ -4342,6 +4416,12 @@ function mpTerminar(){
   if(_mpSexo){const ps=document.getElementById('patientSex');if(ps){ps.value=(_mpSexo==='Hombre'?'Masculino':(_mpSexo==='Mujer'?'Femenino':_mpSexo));}}
   const motivo=document.getElementById('mpMotivo').value.trim();
   if(motivo){const mc=document.getElementById('motivoConsulta');if(mc)mc.value=motivo;}
+  // Nuevos campos agregados
+  const estadoCivil=document.getElementById('mpEstadoCivil').value.trim();if(estadoCivil){const pc=document.getElementById('patientCivil');if(pc)pc.value=estadoCivil;}
+  const ocupacion=document.getElementById('mpOcupacion').value.trim();if(ocupacion){const pj=document.getElementById('patientJob');if(pj)pj.value=ocupacion;}
+  const correo=document.getElementById('mpCorreo').value.trim();if(correo){const pe=document.getElementById('patientEmail');if(pe)pe.value=correo;}
+  const domicilio=document.getElementById('mpDomicilio').value.trim();if(domicilio){const pa=document.getElementById('patientAddress');if(pa)pa.value=domicilio;}
+  const emergencia=document.getElementById('mpEmergencia').value.trim();if(emergencia){const pem=document.getElementById('patientEmergency');if(pem)pem.value=emergencia;}
   // foto
   if(_mpFoto){window._patientPhoto=_mpFoto;if(typeof renderFotoPaciente==='function')renderFotoPaciente();}
   // firma del paciente
