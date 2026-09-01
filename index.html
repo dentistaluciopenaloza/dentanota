@@ -356,10 +356,66 @@ body.adm-no-citas button[onclick="guardarCitaAgenda()"]{display:none!important;}
     </div>
 
     <!-- PASO 3: ANTECEDENTES -->
+    <!-- PASO 3: ANTECEDENTES COMPLETOS -->
     <div class="mp-paso" data-paso="3" style="display:none;">
-      <h3 style="font-size:17px;color:var(--vo);margin-bottom:3px;">¿Padece alguna de estas condiciones?</h3>
-      <div style="font-size:12px;color:var(--ts);margin-bottom:14px;">Toque <b>SÍ</b> o <b>No</b> en cada una. Si contesta SÍ, escriba el detalle. Es importante para su seguridad.</div>
-      <div id="mpAntecedentes"></div>
+      <h3 style="font-size:17px;color:var(--vo);margin-bottom:3px;">Antecedentes Médicos y Personales</h3>
+      <div style="font-size:12px;color:var(--ts);margin-bottom:14px;">Por favor complete los siguientes antecedentes. Son importantes para su seguridad.</div>
+      
+      <!-- Condiciones médicas (original) -->
+      <div style="background:var(--vc);border:1.5px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:600;color:var(--vo);margin-bottom:10px;">¿Padece alguna de estas condiciones?</div>
+        <div id="mpAntecedentes"></div>
+      </div>
+      
+      <!-- Antecedentes hereditarios -->
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;color:var(--ts);margin-bottom:4px;font-weight:600;">Antecedentes hereditarios</label>
+        <div style="font-size:10px;color:var(--ts);margin-bottom:6px;">Enfermedades que padecen o padecieron mamá, papá, abuelos, hermanos</div>
+        <textarea id="mpAntHered" style="width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;" placeholder="Ej: Mamá diabetes, papá hipertensión, abuela cáncer" oninput="mpGuardarEnLocal()"></textarea>
+      </div>
+      
+      <!-- Alergias -->
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;color:var(--ts);margin-bottom:4px;font-weight:600;">Alergias</label>
+        <div style="font-size:10px;color:var(--ts);margin-bottom:6px;">A medicamentos, alimentos, materiales (látex, níquel)</div>
+        <textarea id="mpAlergias" style="width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;" placeholder="Ej: Penicilina, ibuprofeno, latex" oninput="mpGuardarEnLocal()"></textarea>
+      </div>
+      
+      <!-- Medicamentos actuales -->
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;color:var(--ts);margin-bottom:4px;font-weight:600;">Medicamentos actuales</label>
+        <div style="font-size:10px;color:var(--ts);margin-bottom:6px;">Medicinas que está tomando en la actualidad</div>
+        <textarea id="mpMeds" style="width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;" placeholder="Ej: Aspirina, metformina, lisinopril" oninput="mpGuardarEnLocal()"></textarea>
+      </div>
+      
+      <!-- Cirugías previas -->
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;color:var(--ts);margin-bottom:4px;font-weight:600;">Cirugías previas</label>
+        <div style="font-size:10px;color:var(--ts);margin-bottom:6px;">Operaciones o procedimientos quirúrgicos anteriores</div>
+        <textarea id="mpCirugia" style="width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;" placeholder="Ej: Apendicitis, hernia, cesárea, extracción de muela" oninput="mpGuardarEnLocal()"></textarea>
+      </div>
+      
+      <!-- Enfermedades sistémicas -->
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;color:var(--ts);margin-bottom:4px;font-weight:600;">Enfermedades sistémicas</label>
+        <div style="font-size:10px;color:var(--ts);margin-bottom:6px;">Asma, tiroides, lupus, artritis, etc.</div>
+        <textarea id="mpSistem" style="width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;" placeholder="Ej: Asma, hipotiroidismo, artritis reumatoide" oninput="mpGuardarEnLocal()"></textarea>
+      </div>
+      
+      <!-- Gineco-obstétricos -->
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;color:var(--ts);margin-bottom:4px;font-weight:600;">Gineco-obstétricos (si aplica)</label>
+        <div style="font-size:10px;color:var(--ts);margin-bottom:6px;">Embarazos, partos, cesáreas, abortos, irregularidades</div>
+        <textarea id="mpGineco" style="width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;" placeholder="Ej: 2 embarazos, 1 parto vaginal, 1 cesárea" oninput="mpGuardarEnLocal()"></textarea>
+      </div>
+      
+      <!-- Antecedentes dentales -->
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;color:var(--ts);margin-bottom:4px;font-weight:600;">Antecedentes dentales</label>
+        <div style="font-size:10px;color:var(--ts);margin-bottom:6px;">Extracciones, implantes, endodoncias, etc.</div>
+        <textarea id="mpDental" style="width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;" placeholder="Ej: Extracción 4 muelas, implante inferior, 2 endodoncias" oninput="mpGuardarEnLocal()"></textarea>
+      </div>
+      
       <div class="mp-btnrow"><button class="btn btn-s" onclick="mpIr(2)">← Atrás</button><button class="btn btn-p mp-next" onclick="mpValidarPaso3()">Siguiente →</button></div>
     </div>
 
@@ -371,8 +427,44 @@ body.adm-no-citas button[onclick="guardarCitaAgenda()"]{display:none!important;}
       <div class="mp-btnrow"><button class="btn btn-s" onclick="mpIr(3)">← Atrás</button><button class="btn btn-p mp-next" onclick="mpValidarPaso4()">Siguiente →</button></div>
     </div>
 
-    <!-- PASO 5: FIRMA -->
+    <!-- PASO 5: AUTORIZACIÓN DE FOTOS CLÍNICAS -->
     <div class="mp-paso" data-paso="5" style="display:none;">
+      <h3 style="font-size:17px;color:var(--vo);margin-bottom:3px;">📷 Autorización de Fotos Clínicas</h3>
+      
+      <!-- Explicación -->
+      <div style="background:var(--vc);border:1.5px solid var(--bd);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--tx);line-height:1.6;">
+        <b style="color:var(--vo);">¿Por qué tomamos fotos?</b><br>
+        Las fotos clínicas son parte importante del expediente dental. Nos ayudan a documentar el estado inicial, el progreso del tratamiento y los resultados finales para su cuidado y seguimiento.
+      </div>
+
+      <!-- Opciones de autorización -->
+      <div style="margin-bottom:12px;">
+        <label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer;margin-bottom:12px;">
+          <input type="checkbox" id="mpAutoFoto" style="margin-top:3px;flex-shrink:0;">
+          <span style="font-size:11.5px;color:var(--tx);line-height:1.6;"><b>Autorizo el uso de fotos clínicas con fines de difusión.</b><br><span style="color:var(--ts);font-size:10px;">Las fotos pueden ser usadas en artículos educativos, redes sociales o presentaciones (protegiendo mi identidad).</span></span>
+        </label>
+
+        <label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer;margin-bottom:12px;">
+          <input type="checkbox" id="mpNoAutoFoto" checked style="margin-top:3px;flex-shrink:0;">
+          <span style="font-size:11.5px;color:var(--tx);line-height:1.6;"><b>No autorizo fotos con fines distintos al clínico.</b><br><span style="color:var(--ts);font-size:10px;">Las fotos solo serán para expediente, seguimiento y comunicación con otros profesionales si es necesario.</span></span>
+        </label>
+
+        <label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer;">
+          <input type="checkbox" id="mpPrivacidad" checked style="margin-top:3px;flex-shrink:0;">
+          <span style="font-size:11.5px;color:var(--tx);line-height:1.6;"><b>He leído y acepto el aviso de privacidad (LFPDPPP).</b><br><span style="color:var(--ts);font-size:10px;">Entiendo cómo se protegen mis datos personales y fotos clínicas.</span></span>
+        </label>
+      </div>
+
+      <!-- Aviso importante -->
+      <div style="background:#fff3e0;border-left:4px solid #ff9800;padding:10px 12px;border-radius:4px;font-size:11px;color:#e65100;margin-bottom:14px;line-height:1.5;">
+        <b>⚠️ Importante:</b> Sus fotos y datos están protegidos por ley. Solo el personal del consultorio accede a información completa. Imágenes de antes/después nunca mostrarán su nombre o contacto.
+      </div>
+
+      <div class="mp-btnrow"><button class="btn btn-s" onclick="mpIr(4)">← Atrás</button><button class="btn btn-p mp-next" onclick="mpIr(6)">Siguiente →</button></div>
+    </div>
+
+    <!-- PASO 6: FIRMA -->
+    <div class="mp-paso" data-paso="6" style="display:none;">
       <h3 style="font-size:17px;color:var(--vo);margin-bottom:3px;">Consentimiento Informado</h3>
       
       <!-- SECCIÓN 1: QUÉ SÍ GARANTIZAMOS -->
@@ -417,11 +509,10 @@ body.adm-no-citas button[onclick="guardarCitaAgenda()"]{display:none!important;}
       <canvas id="mpSignCanvas" width="560" height="150" style="width:100%;height:150px;background:#fff;border:1.5px solid var(--bd);border-radius:14px;touch-action:none;cursor:crosshair;"></canvas>
       <div id="mpSignFecha" style="font-size:10px;color:var(--ts);text-align:center;margin:4px 0 12px;display:none;"></div>
       <div style="display:flex;gap:8px;margin-bottom:14px;"><button class="btn btn-s btn-sm" onclick="mpBorrarFirma()">Borrar firma</button></div>
-      <div class="mp-btnrow"><button class="btn btn-s" onclick="mpIr(4)">← Atrás</button><button class="btn btn-p" onclick="mpTerminar()">✓ Terminar</button></div>
+      <div class="mp-btnrow"><button class="btn btn-s" onclick="mpIr(5)">← Atrás</button><button class="btn btn-p" onclick="mpTerminar()">✓ Terminar</button></div>
     </div>
 
-    <!-- PASO 6: SOLICITA A ENFERMERA -->
-    <div class="mp-paso" data-paso="6" style="display:none;text-align:center;padding-top:40px;">
+    <div class="mp-paso" data-paso="7" style="display:none;text-align:center;padding-top:40px;">
       <div style="width:80px;height:80px;border-radius:50%;background:var(--vc);display:flex;align-items:center;justify-content:center;font-size:40px;margin:8px auto 20px;">👩‍⚕️</div>
       <h3 style="font-size:19px;color:var(--vo);margin-bottom:6px;">¡Solicita a la Enfermera!</h3>
       <div style="font-size:13px;color:var(--ts);margin-bottom:24px;line-height:1.6;background:var(--cr);border-radius:12px;padding:14px;border:1px solid var(--bd);">
@@ -435,8 +526,8 @@ body.adm-no-citas button[onclick="guardarCitaAgenda()"]{display:none!important;}
       <div style="max-width:300px;margin:0 auto;"><button class="btn btn-p" style="width:100%;" onclick="mpPasarAEnfermera()">📱 Enfermera va a tomar los datos</button></div>
     </div>
 
-    <!-- PASO 7: ENFERMERA - SIGNOS VITALES -->
-    <div class="mp-paso" data-paso="7" style="display:none;">
+    <!-- PASO 8: ENFERMERA - SIGNOS VITALES -->
+    <div class="mp-paso" data-paso="8" style="display:none;">
       <h3 style="font-size:17px;color:var(--vo);margin-bottom:3px;">👩‍⚕️ Registro de Signos Vitales</h3>
       <div style="font-size:12px;color:var(--ts);margin-bottom:14px;background:var(--cr);border-radius:10px;padding:10px;border:1px solid var(--bd);">
         <b style="color:var(--v);">Paciente:</b> <span id="mpEnfNombre" style="font-weight:700;"></span>
@@ -465,7 +556,7 @@ body.adm-no-citas button[onclick="guardarCitaAgenda()"]{display:none!important;}
     </div>
 
     <!-- PANTALLA FINAL -->
-    <div class="mp-paso" data-paso="8" style="display:none;text-align:center;padding-top:30px;">
+    <div class="mp-paso" data-paso="9" style="display:none;text-align:center;padding-top:30px;">
       <div style="width:64px;height:64px;border-radius:50%;background:#e4f7ef;display:flex;align-items:center;justify-content:center;font-size:32px;margin:8px auto 14px;">✓</div>
       <h3 style="font-size:18px;color:var(--vo);margin-bottom:4px;" id="mpGracias">¡Expediente Completo!</h3>
       <div style="font-size:12px;color:var(--ts);margin-bottom:22px;">Tu historia clínica se guardó. El doctor puede verlo ya en su pantalla.</div>
@@ -3889,12 +3980,12 @@ function mpPasarAEnfermera(){
   const nombre=document.getElementById('mpNombre')?.value||'Paciente';
   document.getElementById('mpEnfNombre').textContent=nombre;
   _mpEnfermeraActiva=true;
-  mpIr(7);
+  mpIr(8);
 }
 
 function mpVolverAntesEnf(){
   _mpEnfermeraActiva=false;
-  mpIr(6);
+  mpIr(7);
 }
 
 function mpGuardarEnfermera(){
@@ -4041,7 +4132,17 @@ function mpTerminar(){
   // Recolectar los detalles escritos por el paciente, agrupados
   const det=id=>{const e=document.getElementById('mpcv-'+id);return e&&e.value.trim()?e.value.trim():'';};
   const cond=id=>condState[id]===true;
-  // Alergias -> antAlergias
+  
+  // NUEVOS CAMPOS PASO 3 - Volcad directamente
+  const _antHered=document.getElementById('mpAntHered');if(_antHered){const c=document.getElementById('antHF');if(c)c.value=(_antHered.value.trim()||'');}
+  const _alergias=document.getElementById('mpAlergias');if(_alergias){const c=document.getElementById('antAlergias');if(c)c.value=(_alergias.value.trim()||'');}
+  const _meds=document.getElementById('mpMeds');if(_meds){const c=document.getElementById('antMeds');if(c)c.value=(_meds.value.trim()||'');}
+  const _cirugia=document.getElementById('mpCirugia');if(_cirugia){const c=document.getElementById('antCirugias');if(c)c.value=(_cirugia.value.trim()||'');}
+  const _sistem=document.getElementById('mpSistem');if(_sistem){const c=document.getElementById('antSis');if(c)c.value=(_sistem.value.trim()||'');}
+  const _gineco=document.getElementById('mpGineco');if(_gineco){const c=document.getElementById('antGineco');if(c)c.value=(_gineco.value.trim()||'');}
+  const _dental=document.getElementById('mpDental');if(_dental){const c=document.getElementById('antDental');if(c)c.value=(_dental.value.trim()||'');}
+  
+  // Alergias -> antAlergias (legacy - si viene de condState)
   let alergias=[];
   if(cond('alergias')){const d=det('alergias');alergias.push('Alergias'+(d?': '+d:''));}
   if(alergias.length){const c=document.getElementById('antAlergias');if(c)c.value=(c.value?c.value+' | ':'')+alergias.join('; ');}
@@ -4075,7 +4176,7 @@ function mpTerminar(){
     patientEmail:_val('patientEmail'),
     patientAddress:_val('patientAddress'),
     patientEmergency:_val('patientEmergency'),
-    antHF:_val('antHF'),antSis:_val('antSis'),antAlergias:_val('antAlergias'),antMeds:_val('antMeds'),
+    antHF:_val('antHF'),antSis:_val('antSis'),antAlergias:_val('antAlergias'),antMeds:_val('antMeds'),antCirugias:_val('antCirugias'),antGineco:_val('antGineco'),antDental:_val('antDental'),
     condiciones:{...condState}
   };
   if(typeof curNote!=='undefined'&&curNote){
@@ -4103,8 +4204,8 @@ function mpTerminar(){
     const sb=document.getElementById('saveBtn');
     if(sb){sb.click();}
   }catch(e){}
-  // ir a pantalla de "Solicita a enfermera" (paso 6)
-  mpIr(6);
+  // ir a pantalla de "Solicita a enfermera" (paso 7)
+  mpIr(7);
 }
 
 function mpTerminarYVolcarVitales(){
