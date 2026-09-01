@@ -4228,13 +4228,13 @@ function mpTerminar(){
   const cond=id=>condState[id]===true;
   
   // NUEVOS CAMPOS PASO 3 - Volcad directamente
-  const _antHered=document.getElementById('mpAntHered');if(_antHered){const c=document.getElementById('antHF');if(c)c.value=(_antHered.value.trim()||'');}
-  const _alergias=document.getElementById('mpAlergias');if(_alergias){const c=document.getElementById('antAlergias');if(c)c.value=(_alergias.value.trim()||'');}
-  const _meds=document.getElementById('mpMeds');if(_meds){const c=document.getElementById('antMeds');if(c)c.value=(_meds.value.trim()||'');}
-  const _cirugia=document.getElementById('mpCirugia');if(_cirugia){const c=document.getElementById('antCirugias');if(c)c.value=(_cirugia.value.trim()||'');}
-  const _sistem=document.getElementById('mpSistem');if(_sistem){const c=document.getElementById('antSis');if(c)c.value=(_sistem.value.trim()||'');}
-  const _gineco=document.getElementById('mpGineco');if(_gineco){const c=document.getElementById('antGineco');if(c)c.value=(_gineco.value.trim()||'');}
-  const _dental=document.getElementById('mpDental');if(_dental){const c=document.getElementById('antDental');if(c)c.value=(_dental.value.trim()||'');}
+  const _antHered=document.getElementById('mpAntHered');if(_antHered){const c=document.getElementById('antHF');if(c){c.value=(_antHered.value.trim()||'');console.log('✓ Volcado antHF:',c.value);}}
+  const _alergias=document.getElementById('mpAlergias');if(_alergias){const c=document.getElementById('antAlergias');if(c){c.value=(_alergias.value.trim()||'');console.log('✓ Volcado antAlergias:',c.value);}}
+  const _meds=document.getElementById('mpMeds');if(_meds){const c=document.getElementById('antMeds');if(c){c.value=(_meds.value.trim()||'');console.log('✓ Volcado antMeds:',c.value);}}
+  const _cirugia=document.getElementById('mpCirugia');if(_cirugia){const c=document.getElementById('antCirugias');if(c){c.value=(_cirugia.value.trim()||'');console.log('✓ Volcado antCirugias:',c.value);}}
+  const _sistem=document.getElementById('mpSistem');if(_sistem){const c=document.getElementById('antSis');if(c){c.value=(_sistem.value.trim()||'');console.log('✓ Volcado antSis:',c.value);}}
+  const _gineco=document.getElementById('mpGineco');if(_gineco){const c=document.getElementById('antGineco');if(c){c.value=(_gineco.value.trim()||'');console.log('✓ Volcado antGineco:',c.value);}}
+  const _dental=document.getElementById('mpDental');if(_dental){const c=document.getElementById('antDental');if(c){c.value=(_dental.value.trim()||'');console.log('✓ Volcado antDental:',c.value);}}
   
   // Alergias -> antAlergias (legacy - si viene de condState)
   let alergias=[];
@@ -4293,6 +4293,22 @@ function mpTerminar(){
     const cNoFoto=document.getElementById('consentNoFoto');if(cNoFoto)cNoFoto.checked=true;
     // (la de difusión la deja el doctor a criterio; no se marca sola)
   }catch(e){}
+  // === VOLCADO CONFIRMADO - Log de éxito ===
+  console.log('═══════════════════════════════════════');
+  console.log('✓ VOLCADO COMPLETADO A FICHA LAPTOP');
+  console.log('═══════════════════════════════════════');
+  console.log('Datos volcados:');
+  console.log('  • Nombre:',document.getElementById('patientName')?.value);
+  console.log('  • DOB:',document.getElementById('patientDob')?.value);
+  console.log('  • Tel:',document.getElementById('patientPhone')?.value);
+  console.log('  • Antecedentes hereditarios:',document.getElementById('antHF')?.value?.slice(0,50));
+  console.log('  • Alergias:',document.getElementById('antAlergias')?.value);
+  console.log('  • Medicamentos:',document.getElementById('antMeds')?.value?.slice(0,50));
+  console.log('  • Cirugías:',document.getElementById('antCirugias')?.value?.slice(0,50));
+  console.log('  • Sistémicos:',document.getElementById('antSis')?.value?.slice(0,50));
+  console.log('  • Gineco-obstétricos:',document.getElementById('antGineco')?.value?.slice(0,50));
+  console.log('  • Dentales:',document.getElementById('antDental')?.value?.slice(0,50));
+  console.log('═══════════════════════════════════════');
   // === GUARDADO AUTOMÁTICO del expediente al terminar en la tablet ===
   try{
     if(guardarExpedienteDirecto()){
@@ -4301,6 +4317,22 @@ function mpTerminar(){
   }catch(e){console.error('Error al guardar:',e);}
   // ir a pantalla de "Solicita a enfermera" (paso 7)
   mpIr(7);
+}
+
+// === FUNCIÓN DE SCROLL A ANTECEDENTES (para mostrar que se volcaron) ===
+function scrollAntecedentes(){
+  setTimeout(()=>{
+    const cardAnt=document.querySelector('[class="card"]');
+    if(cardAnt&&cardAnt.querySelector('#antHF')){
+      const antSection=cardAnt;
+      antSection.scrollIntoView({behavior:'smooth',block:'start'});
+      // Highlight el card por 2 segundos
+      const orig=antSection.style.background;
+      antSection.style.background='#fffacd';
+      setTimeout(()=>{antSection.style.background=orig;},2000);
+      console.log('→ Scroll a sección Antecedentes completado');
+    }
+  },500);
 }
 
 function mpTerminarYVolcarVitales(){
@@ -4334,10 +4366,21 @@ function mpTerminarYVolcarVitales(){
 function mpPedirSalida(){
   // Al devolver la tablet, cierra el modo paciente y vuelve a la vista del doctor con los datos ya cargados
   document.getElementById('pacienteOverlay').style.display='none';
+  
+  // === ACTUALIZAR LA FICHA CON LOS DATOS VOLCADOS ===
+  // Los datos ya están en los campos, solo necesitamos refrescar visualmente
+  if(typeof actualizarFichaResumen==='function')actualizarFichaResumen();
+  if(typeof updExp==='function')updExp(); // Actualizar expediente
+  
   // llevar al doctor a la ficha del paciente (t1) dentro de nueva consulta
   if(typeof goTab==='function')goTab('t1');
   const nb=document.querySelector('[data-view="nueva"]');
   if(nb){document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));nb.classList.add('active');document.getElementById('view-nueva').classList.add('active');}
+  
+  // Scroll automático a la sección de antecedentes para que vea lo volcado
+  scrollAntecedentes();
+  
+  console.log('✓ Datos de tablet cargados en ficha laptop');
 }
 
 function dnMostrarBienvenida(){
