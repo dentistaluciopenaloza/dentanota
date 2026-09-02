@@ -340,52 +340,20 @@ body.adm-no-citas button[onclick="guardarCitaAgenda()"]{display:none!important;}
       <div class="mp-btnrow"><span></span><button class="btn btn-p mp-next" id="mpFotoBtn" onclick="mpValidarFoto()" style="opacity:0.5;cursor:not-allowed;">Siguiente &#x2192;</button></div>
     </div>
 
-    <!-- PASO 2: DATOS PERSONALES COMPLETOS -->
+    <!-- PASO 2: DATOS PERSONALES -->
     <div class="mp-paso" data-paso="2" style="display:none;">
-      <h3 style="font-size:17px;color:var(--vo);margin-bottom:3px;">📋 Datos Personales</h3>
+      <h3 style="font-size:17px;color:var(--vo);margin-bottom:3px;">Datos Personales</h3>
       <div style="font-size:12px;color:var(--ts);margin-bottom:16px;">Por favor complete sus datos. Toque cada campo para escribir.</div>
-      
-      <!-- SECCIÓN 1: DATOS BÁSICOS -->
-      <div style="background:var(--cr);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:14px;">
-        <div style="font-size:11px;font-weight:600;color:var(--vo);margin-bottom:10px;">Información Básica</div>
-        <div class="mp-fld"><label>Nombre completo *</label><input type="text" id="mpNombre" placeholder="Apellido paterno, materno, nombre(s)"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-          <div class="mp-fld"><label>Fecha de nacimiento</label><input type="text" id="mpDob" placeholder="DD/MM/AAAA" oninput="mpCalcularEdad()"></div>
-          <div class="mp-fld"><label>Edad (automática)</label><input type="text" id="mpEdad" placeholder="—" readonly style="background:#f0f0f0;cursor:not-allowed;"></div>
-          <div class="mp-fld"><label>Sexo *</label><div class="mp-chips" id="mpSexo" style="margin-top:6px;"><span class="mp-chip" data-v="Hombre">Hombre</span><span class="mp-chip" data-v="Mujer">Mujer</span></div></div>
-        </div>
+      <div class="mp-fld"><label>Nombre completo *</label><input type="text" id="mpNombre" placeholder="Su nombre completo"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="mp-fld"><label>Fecha de nacimiento</label><input type="text" id="mpDob" placeholder="DD/MM/AAAA"></div>
+        <div class="mp-fld"><label>Tel&#xE9;fono</label><input type="tel" id="mpTel" placeholder="10 d&#xED;gitos"></div>
       </div>
-      
-      <!-- SECCIÓN 2: DATOS DE CONTACTO -->
-      <div style="background:var(--cr);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:14px;">
-        <div style="font-size:11px;font-weight:600;color:var(--vo);margin-bottom:10px;">Datos de Contacto</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div class="mp-fld"><label>Teléfono *</label><input type="tel" id="mpTel" placeholder="10 dígitos"></div>
-          <div class="mp-fld"><label>Correo electrónico</label><input type="email" id="mpCorreo" placeholder="correo@ejemplo.com"></div>
-        </div>
-        <div class="mp-fld"><label>Contacto de emergencia</label><input type="text" id="mpEmergencia" placeholder="Nombre y relación (ej: Juan García - Hermano)"></div>
-        <div class="mp-fld"><label>Domicilio *</label><input type="text" id="mpDomicilio" placeholder="Calle, número, apartamento, ciudad"></div>
-      </div>
-      
-      <!-- SECCIÓN 3: DATOS SOCIO-DEMOGRÁFICOS -->
-      <div style="background:var(--cr);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:14px;">
-        <div style="font-size:11px;font-weight:600;color:var(--vo);margin-bottom:10px;">Información Adicional</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div class="mp-fld"><label>Estado civil</label><select id="mpEstadoCivil" style="width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;font-size:13px;"><option value="">— Seleccionar —</option><option value="Soltero(a)">Soltero(a)</option><option value="Casado(a)">Casado(a)</option><option value="Divorciado(a)">Divorciado(a)</option><option value="Viudo(a)">Viudo(a)</option><option value="Unión libre">Unión libre</option></select></div>
-          <div class="mp-fld"><label>Ocupación</label><input type="text" id="mpOcupacion" placeholder="Ej: Ingeniero, Estudiante, Ama de casa"></div>
-        </div>
-        <div class="mp-fld"><label>¿Cómo prefiere que le llamemos? (opcional)</label><input type="text" id="mpTrato" placeholder="Nombre o trato preferido"></div>
-      </div>
-      
-      <!-- SECCIÓN 4: MOTIVO DE CONSULTA -->
-      <div style="background:var(--cr);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:14px;">
-        <div style="font-size:11px;font-weight:600;color:var(--vo);margin-bottom:10px;">Motivo de su Visita</div>
-        <div class="mp-fld"><input type="text" id="mpMotivo" placeholder="¿Por qué nos visita hoy? (dolor, revisión, tratamiento, etc.)"></div>
-      </div>
-      
-      <div class="mp-btnrow"><button class="btn btn-s" onclick="mpIr(1)">← Atrás</button><button class="btn btn-p mp-next" onclick="mpValidarPaso2()">Siguiente →</button></div>
+      <div class="mp-fld"><label>Sexo biol&#xF3;gico</label><div class="mp-chips" id="mpSexo"><span class="mp-chip" data-v="Hombre">Hombre</span><span class="mp-chip" data-v="Mujer">Mujer</span><span class="mp-chip" data-v="Intersexual">Intersexual</span></div></div>
+      <div class="mp-fld"><label>&#xBF;C&#xF3;mo prefiere que le llamemos? (opcional)</label><input type="text" id="mpTrato" placeholder="Nombre o trato"></div>
+      <div class="mp-fld"><label>Motivo de su visita (opcional)</label><input type="text" id="mpMotivo" placeholder="&#xBF;Por qu&#xE9; nos visita?"></div>
+      <div class="mp-btnrow"><button class="btn btn-s" onclick="mpIr(1)">&#x2190; Atr&#xE1;s</button><button class="btn btn-p mp-next" onclick="mpIr(3)">Siguiente &#x2192;</button></div>
     </div>
-
 
     <!-- PASO 3: ANTECEDENTES -->
     <!-- PASO 3: ANTECEDENTES COMPLETOS -->
@@ -519,6 +487,9 @@ body.adm-no-citas button[onclick="guardarCitaAgenda()"]{display:none!important;}
           para siempre, porque hay factores biológicos que están<br>
           fuera de nuestro control.
         </div>
+        <div style="font-size:11.5px;color:#bf360c;font-weight:500;line-height:1.6;margin-top:10px;">
+          Aunque los materiales están diseñados y aprobados para uso en la cavidad oral humana, el organismo de cada persona responde de forma distinta (saliva, oclusión, sistema inmune), lo cual también puede afectar la duración del tratamiento.
+        </div>
       </div>
       
       <!-- SECCIÓN 3: POR QUÉ NO PODEMOS GARANTIZAR -->
@@ -530,6 +501,7 @@ body.adm-no-citas button[onclick="guardarCitaAgenda()"]{display:none!important;}
         • Si muerde cosas duras<br>
         • Si no mantiene buena higiene oral<br><br>
         <b>En estos casos, el dentista NO es responsable del fracaso.</b>
+        <div style="border-top:1px dotted #e91e63;margin-top:10px;padding-top:10px;font-weight:500;">Una vez finalizada la intervención, cualquier ajuste, manipulación o tratamiento adicional realizado por otro profesional queda fuera de la responsabilidad del C.D. tratante, ya que no le es posible verificar los materiales, técnicas o cuidados aplicados por terceros después de esa fecha.</div>
       </div>
       
       <!-- CASILLA: Declaración de veracidad -->
@@ -565,46 +537,24 @@ body.adm-no-citas button[onclick="guardarCitaAgenda()"]{display:none!important;}
         <b style="color:var(--v);">Paciente:</b> <span id="mpEnfNombre" style="font-weight:700;"></span>
       </div>
       
-      <!-- VITALES - Grid 2 columnas -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-        <div class="mp-fld">
-          <label>Presión Arterial (120/80) *</label>
-          <input type="text" id="mpEnfPA" placeholder="120/80" oninput="mpValidarVitales()">
-        </div>
-        <div class="mp-fld">
-          <label>Frec. Cardíaca (lpm) *</label>
-          <input type="number" id="mpEnfFC" placeholder="78" step="1" oninput="mpValidarVitales()">
-        </div>
-        <div class="mp-fld">
-          <label>Temperatura (°C) *</label>
-          <input type="number" id="mpEnfTemp" placeholder="36.5" step="0.1" oninput="mpValidarVitales()">
-        </div>
-        <div class="mp-fld">
-          <label>Saturación O₂ (%) *</label>
-          <input type="number" id="mpEnfSat" placeholder="98" step="1" min="0" max="100" oninput="mpValidarVitales()">
-        </div>
+      <div class="mp-fld">
+        <label>Presión Arterial (ej: 120/80) *</label>
+        <input type="text" id="mpEnfPA" placeholder="120/80">
       </div>
-
-      <!-- ANTROPOMETRÍA -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="mp-fld">
           <label>Peso (kg) *</label>
-          <input type="number" id="mpEnfPeso" placeholder="65" step="0.1" oninput="mpValidarVitales()">
+          <input type="number" id="mpEnfPeso" placeholder="65" step="0.1">
         </div>
         <div class="mp-fld">
           <label>Altura (cm) *</label>
-          <input type="number" id="mpEnfAltura" placeholder="165" step="0.1" oninput="mpValidarVitales()">
+          <input type="number" id="mpEnfAltura" placeholder="165" step="0.1">
         </div>
       </div>
-
-      <!-- TABLA DE REFERENCIA RÁPIDA -->
-      <div style="background:#f5f5f5;border:1px solid #ddd;border-radius:10px;padding:10px;margin-bottom:14px;font-size:10px;color:#666;line-height:1.5;">
-        <b style="color:#333;">📋 Valores de Referencia:</b><br>
-        PA: 120/80 (normal) | FC: 60-100 lpm | Temp: 36.5-37.2°C | Sat O₂: 95-100%
+      <div class="mp-fld">
+        <label>Glucosa (mg/dL — prueba de sangre en dedo)</label>
+        <input type="number" id="mpEnfGlucosa" placeholder="90" step="1">
       </div>
-
-      <!-- SECCIÓN DE ALERTAS (se muestra dinámicamente) -->
-      <div id="mpAlertas" style="margin-bottom:14px;"></div>
 
       <div style="background:#e8f8f5;border:1px solid var(--bd);border-radius:10px;padding:10px;font-size:10px;color:var(--ts);margin-bottom:14px;">
         ℹ️ Estos datos se guardan junto con toda la información del paciente.
@@ -809,6 +759,7 @@ body.adm-no-citas button[onclick="guardarCitaAgenda()"]{display:none!important;}
         <div class="vital"><div class="vital-label">Talla</div><input id="vTalla" placeholder="1.65" oninput="calcIMC()"><div class="vital-unit">m</div></div>
         <div class="vital"><div class="vital-label">IMC (auto)</div><input id="vIMC" readonly style="color:var(--vo);font-weight:700;" placeholder="&#x2014;"><div class="vital-unit">kg/m&#xB2;</div></div>
         <div class="vital"><div class="vital-label">Saturaci&#xF3;n O&#x2082;</div><input id="vSat" placeholder="98"><div class="vital-unit">%</div></div>
+        <div class="vital"><div class="vital-label">Glucosa (dedo)</div><input id="vGlucosa" placeholder="90"><div class="vital-unit">mg/dL</div></div>
       </div>
     </div>
     <div class="btn-row"><button class="btn btn-p" onclick="goTab('t2')">Continuar &#x2192; Historia cl&#xED;nica</button></div>
@@ -885,60 +836,6 @@ body.adm-no-citas button[onclick="guardarCitaAgenda()"]{display:none!important;}
         <div class="fld"><label>Antecedentes dentales</label><textarea id="antDental"></textarea></div>
         <div class="fld ff"><label>Motivo de consulta</label><textarea id="motivoConsulta"></textarea></div>
       </div>
-    </div>
-    <div class="card">
-      <div class="card-title">💊 Recomendaciones Clínicas por Signos Vitales</div>
-      
-      <!-- TABLA DE REFERENCIA -->
-      <div style="margin-bottom:14px;">
-        <div style="font-size:11px;font-weight:600;color:var(--vo);margin-bottom:8px;">📊 Rangos de Referencia</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;font-size:10px;">
-          <div style="background:#e8f5e9;border:1px solid #66bb6a;border-radius:6px;padding:8px;text-align:center;">
-            <b style="color:#1b5e20;">PA (mmHg)</b><br>
-            <span style="color:#4caf50;">✓ 120/80</span>
-          </div>
-          <div style="background:#e3f2fd;border:1px solid #2196f3;border-radius:6px;padding:8px;text-align:center;">
-            <b style="color:#0d47a1;">FC (lpm)</b><br>
-            <span style="color:#1976d2;">✓ 60-100</span>
-          </div>
-          <div style="background:#fff3e0;border:1px solid #ff9800;border-radius:6px;padding:8px;text-align:center;">
-            <b style="color:#e65100;">Temp (°C)</b><br>
-            <span style="color:#f57c00;">✓ 36.5-37.2</span>
-          </div>
-          <div style="background:#f3e5f5;border:1px solid #9c27b0;border-radius:6px;padding:8px;text-align:center;">
-            <b style="color:#4a148c;">Sat O₂ (%)</b><br>
-            <span style="color:#7b1fa2;">✓ 95-100</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- SECCIÓN DE RECOMENDACIONES HARD-CODED -->
-      <div id="mpRecomendacionesClinicas" style="margin-bottom:14px;"></div>
-
-      <!-- TABLA DE DOSIS POR PESO -->
-      <div id="mpTablaDosis" style="margin-bottom:14px;display:none;">
-        <div style="font-size:11px;font-weight:600;color:var(--vo);margin-bottom:6px;">💉 Dosis Recomendada de Anestésico</div>
-        <table style="width:100%;border-collapse:collapse;font-size:10px;">
-          <thead>
-            <tr style="background:var(--vc);">
-              <th style="border:1px solid var(--bd);padding:6px;text-align:left;">Peso</th>
-              <th style="border:1px solid var(--bd);padding:6px;text-align:center;">Dosis máx</th>
-              <th style="border:1px solid var(--bd);padding:6px;text-align:center;">Cartuchos*</th>
-            </tr>
-          </thead>
-          <tbody id="mpTablaDosisBody"></tbody>
-        </table>
-        <div style="font-size:9px;color:var(--ts);margin-top:4px;">* Asumiendo 1.8ml × cartuchos de lidocaína 2%</div>
-      </div>
-
-      <!-- BOTÓN IA (Fase 2) -->
-      <div style="display:flex;gap:8px;margin-top:10px;">
-        <button class="btn btn-p btn-sm" onclick="generarRecomendacionesIA()" style="flex:1;">
-          🤖 Generar Análisis Detallado con IA
-        </button>
-      </div>
-
-      <div id="mpResultadoIA" style="display:none;margin-top:14px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;padding:12px;"></div>
     </div>
     <div class="card">
       <div class="card-title">&#x1F48A; B&#xFA;squeda de medicamentos</div>
@@ -2390,7 +2287,7 @@ document.getElementById('generateBtn').addEventListener('click',async()=>{
     odoData={};
     (res1.odontograma||[]).forEach(h=>{if(!h||!h.diente)return;const num=h.diente,cara=(h.cara||'O').toUpperCase(),hallazgo=h.hallazgo||'caries';if(!odoData[num])odoData[num]={notas:[]};odoData[num][cara]=hallazgo;if(h.nota){if(!odoData[num].notas)odoData[num].notas=[];odoData[num].notas.push({cara,hallazgo,nota:h.nota,fecha:new Date().toLocaleDateString('es-MX')});}});
     bgtItems=(res2.presupuesto||[]).map((b,i)=>({...b,id:i,precio:Number(b.precio)||0,cantidad:Number(b.cantidad)||1,costoLab:0,diente:b.diente||''}));
-    curNote={soap,patientName:pN,patientAge:pA,patientSex:pS,visitType:vT,patientDob:document.getElementById('patientDob').value,patientCivil:document.getElementById('patientCivil').value,patientJob:document.getElementById('patientJob').value,patientPhone:document.getElementById('patientPhone').value,patientEmail:document.getElementById('patientEmail').value,patientAddress:document.getElementById('patientAddress').value,patientEmergency:document.getElementById('patientEmergency').value,antHF:document.getElementById('antHF').value,antSis:document.getElementById('antSis').value,antAlergias:document.getElementById('antAlergias').value,antMeds:document.getElementById('antMeds').value,vitales:{PA:document.getElementById('vPA').value,FC:document.getElementById('vFC').value,FR:document.getElementById('vFR').value,Temp:document.getElementById('vTemp').value,Peso:document.getElementById('vPeso').value,Talla:document.getElementById('vTalla').value,IMC:document.getElementById('vIMC').value,Sat:document.getElementById('vSat').value},condiciones:{...condState},expNumber:getNextExp(),date:new Date().toISOString(),transcript};
+    curNote={soap,patientName:pN,patientAge:pA,patientSex:pS,visitType:vT,patientDob:document.getElementById('patientDob').value,patientCivil:document.getElementById('patientCivil').value,patientJob:document.getElementById('patientJob').value,patientPhone:document.getElementById('patientPhone').value,patientEmail:document.getElementById('patientEmail').value,patientAddress:document.getElementById('patientAddress').value,patientEmergency:document.getElementById('patientEmergency').value,antHF:document.getElementById('antHF').value,antSis:document.getElementById('antSis').value,antAlergias:document.getElementById('antAlergias').value,antMeds:document.getElementById('antMeds').value,vitales:{PA:document.getElementById('vPA').value,FC:document.getElementById('vFC').value,FR:document.getElementById('vFR').value,Temp:document.getElementById('vTemp').value,Peso:document.getElementById('vPeso').value,Talla:document.getElementById('vTalla').value,IMC:document.getElementById('vIMC').value,Sat:document.getElementById('vSat').value,Glucosa:document.getElementById('vGlucosa').value},condiciones:{...condState},expNumber:getNextExp(),date:new Date().toISOString(),transcript};
     diagOperatorio='';diagPediatrico='';diagPeriodontal='';
     const dOC=document.getElementById('diagOperatorioCard');if(dOC)dOC.style.display='none';
     const dPC=document.getElementById('diagPediatricoCard');if(dPC)dPC.style.display='none';
@@ -2925,7 +2822,7 @@ document.getElementById('genBtnE').addEventListener('click',async()=>{
     document.getElementById('evolSoapCard').style.display='block';
     document.getElementById('evolOdoCard').style.display=updates.length>0?'block':'none';
     // Guardar en curNote para cuando se guarde el expediente
-    if(!curNote){curNote={patientName:pN,patientAge:pA,patientSex:pS,visitType:'seguimiento',patientDob:document.getElementById('patientDob').value,patientCivil:document.getElementById('patientCivil').value,patientJob:document.getElementById('patientJob').value,patientPhone:document.getElementById('patientPhone').value,patientEmail:document.getElementById('patientEmail').value,patientAddress:document.getElementById('patientAddress').value,patientEmergency:document.getElementById('patientEmergency').value,antHF:'',antSis:'',antAlergias:document.getElementById('antAlergias').value||'',antMeds:'',vitales:{PA:document.getElementById('vPA').value,FC:document.getElementById('vFC').value,FR:document.getElementById('vFR').value,Temp:document.getElementById('vTemp').value,Peso:document.getElementById('vPeso').value,Talla:document.getElementById('vTalla').value,IMC:document.getElementById('vIMC').value,Sat:document.getElementById('vSat').value},condiciones:{...condState},expNumber:getNextExp(),date:new Date().toISOString(),transcript};}
+    if(!curNote){curNote={patientName:pN,patientAge:pA,patientSex:pS,visitType:'seguimiento',patientDob:document.getElementById('patientDob').value,patientCivil:document.getElementById('patientCivil').value,patientJob:document.getElementById('patientJob').value,patientPhone:document.getElementById('patientPhone').value,patientEmail:document.getElementById('patientEmail').value,patientAddress:document.getElementById('patientAddress').value,patientEmergency:document.getElementById('patientEmergency').value,antHF:'',antSis:'',antAlergias:document.getElementById('antAlergias').value||'',antMeds:'',vitales:{PA:document.getElementById('vPA').value,FC:document.getElementById('vFC').value,FR:document.getElementById('vFR').value,Temp:document.getElementById('vTemp').value,Peso:document.getElementById('vPeso').value,Talla:document.getElementById('vTalla').value,IMC:document.getElementById('vIMC').value,Sat:document.getElementById('vSat').value,Glucosa:document.getElementById('vGlucosa').value},condiciones:{...condState},expNumber:getNextExp(),date:new Date().toISOString(),transcript};}
     curNote.soap={motivo_consulta:soap.procedimiento,subjetivo:soap.subjetivo,objetivo:soap.objetivo,diagnostico:soap.diagnostico,plan:[soap.procedimiento],indicaciones:soap.indicaciones,proxima_cita:soap.proxima_cita};
     curNote.visitType='seguimiento';curNote.date=new Date().toISOString();
     borrarBorrador('evol');
@@ -4076,7 +3973,7 @@ function abrirModoPaciente(){
     
     // Cargar en tablet
     const e_nom=document.getElementById('mpNombre');if(e_nom)e_nom.value=pName;
-    const e_dob=document.getElementById('mpDob');if(e_dob&&pDob){e_dob.value=pDob;mpCalcularEdad();}
+    const e_dob=document.getElementById('mpDob');if(e_dob&&pDob)e_dob.value=pDob;
     const e_tel=document.getElementById('mpTel');if(e_tel&&pTel)e_tel.value=pTel;
     const e_civ=document.getElementById('mpEstadoCivil');if(e_civ&&pCivil)e_civ.value=pCivil;
     const e_job=document.getElementById('mpOcupacion');if(e_job&&pJob)e_job.value=pJob;
@@ -4155,112 +4052,19 @@ function mpVolverAntesEnf(){
   mpIr(7);
 }
 
-function mpValidarVitales(){
-  // Leer valores de los signos vitales
-  const pa=document.getElementById('mpEnfPA')?.value?.trim()||'';
-  const fc=parseInt(document.getElementById('mpEnfFC')?.value)||null;
-  const temp=parseFloat(document.getElementById('mpEnfTemp')?.value)||null;
-  const sat=parseInt(document.getElementById('mpEnfSat')?.value)||null;
-  const peso=parseFloat(document.getElementById('mpEnfPeso')?.value)||null;
-  const altura=parseFloat(document.getElementById('mpEnfAltura')?.value)||null;
-  
-  // Contenedor de alertas
-  const alertasDiv=document.getElementById('mpAlertas');
-  const alertas=[];
-  
-  // Función auxiliar para crear alerta
-  const crearAlerta=(tipo,titulo,desc)=>{
-    const colors={rojo:'#ffebee',naranja:'#fff3e0',amarillo:'#fffde7',verde:'#e8f5e9'};
-    const borderColors={rojo:'#ef5350',naranja:'#ffa726',amarillo:'#fdd835',verde:'#66bb6a'};
-    const textColors={rojo:'#c62828',naranja:'#e65100',amarillo:'#f57f17',verde:'#1b5e20'};
-    return `<div style="background:${colors[tipo]};border-left:4px solid ${borderColors[tipo]};border-radius:6px;padding:10px;margin-bottom:10px;font-size:11px;color:${textColors[tipo]};line-height:1.5;"><b>${titulo}</b><br>${desc}</div>`;
-  };
-  
-  // ===== VALIDACIONES =====
-  
-  // PRESIÓN ARTERIAL
-  if(pa){
-    const parts=pa.split('/');
-    const sys=parseInt(parts[0]);
-    const dia=parseInt(parts[1]);
-    if(sys>=140||dia>=90){
-      alertas.push(crearAlerta('rojo','⚠️ PRESIÓN ARTERIAL ELEVADA',`${pa} mmHg. Riesgo cardiovascular. Considerar diferir procedimientos electivos.`));
-    }else if(sys>=130||dia>=80){
-      alertas.push(crearAlerta('naranja','⚠️ Presión arterial alta normal',`${pa} mmHg. Monitorizar durante procedimiento.`));
-    }
-  }
-  
-  // FRECUENCIA CARDÍACA
-  if(fc!==null){
-    if(fc>100){
-      alertas.push(crearAlerta('naranja','⚠️ TAQUICARDIA',`FC ${fc} lpm. Evaluar causa (estrés, ansiedad, dolor). Monitorizar.`));
-    }else if(fc<60){
-      alertas.push(crearAlerta('amarillo','⚠️ Bradicardia',`FC ${fc} lpm. Si es basal, OK. Si es nueva, investigar.`));
-    }
-  }
-  
-  // TEMPERATURA
-  if(temp!==null){
-    if(temp>38){
-      alertas.push(crearAlerta('rojo','🔴 FIEBRE',`Temp ${temp}°C. CONTRAINDICACIÓN para procedimientos. Referir a médico.`));
-    }else if(temp>37.5){
-      alertas.push(crearAlerta('naranja','⚠️ Febrícula',`Temp ${temp}°C. Sospecha de infección. Evaluar síntomas. Precaución.`));
-    }else if(temp<36){
-      alertas.push(crearAlerta('amarillo','⚠️ Hipotermia',`Temp ${temp}°C. Calentar al paciente. Vigilar.`));
-    }
-  }
-  
-  // SATURACIÓN O2
-  if(sat!==null){
-    if(sat<90){
-      alertas.push(crearAlerta('rojo','🔴 HIPOXEMIA SEVERA',`Sat O₂ ${sat}%. EMERGENCIA. Oxígeno suplementario. Suspender procedimiento.`));
-    }else if(sat<95){
-      alertas.push(crearAlerta('naranja','⚠️ SATURACIÓN BAJA',`Sat O₂ ${sat}%. Monitorizar. Tener O₂ disponible. Paciente con riesgo respiratorio.`));
-    }
-  }
-  
-  // IMC (si hay peso y altura)
-  if(peso!==null&&altura!==null&&altura>0){
-    const imc=(peso/((altura/100)**2)).toFixed(1);
-    if(imc<18.5){
-      alertas.push(crearAlerta('amarillo','⚠️ Peso bajo',`IMC ${imc}. Evaluar estado nutricional.`));
-    }else if(imc>30){
-      alertas.push(crearAlerta('amarillo','⚠️ Sobrepeso/Obesidad',`IMC ${imc}. Mayor riesgo quirúrgico. Precaución con sedación.`));
-    }
-  }
-  
-  // Si no hay alertas, mostrar "OK"
-  if(alertas.length===0&&(pa||fc||temp||sat)){
-    alertas.push(crearAlerta('verde','✅ VITALES NORMALES','Signos vitales dentro de los rangos normales. Paciente apto para procedimiento.'));
-  }
-  
-  // Renderizar alertas
-  alertasDiv.innerHTML=alertas.join('');
-}
-
 function mpGuardarEnfermera(){
   const pa=document.getElementById('mpEnfPA')?.value?.trim();
-  const fc=document.getElementById('mpEnfFC')?.value?.trim();
-  const temp=document.getElementById('mpEnfTemp')?.value?.trim();
-  const sat=document.getElementById('mpEnfSat')?.value?.trim();
   const peso=document.getElementById('mpEnfPeso')?.value?.trim();
   const altura=document.getElementById('mpEnfAltura')?.value?.trim();
+  const glucosa=document.getElementById('mpEnfGlucosa')?.value?.trim();
   
-  if(!pa||!fc||!temp||!sat||!peso||!altura){
-    alert('Por favor completa TODOS los signos vitales:\n✓ PA\n✓ FC\n✓ Temperatura\n✓ Sat O₂\n✓ Peso\n✓ Altura');
-    return;
-  }
-  
-  // Validar formato PA (debe tener /)
-  if(!pa.includes('/')){
-    alert('Presión arterial debe ser formato: 120/80');
+  if(!pa||!peso||!altura){
+    alert('Por favor llena todos los signos vitales: PA, peso y altura.');
     return;
   }
   
   // Guardar vitales de enfermera
-  _mpVitales={PA:pa,FC:fc,Temp:temp,SatO2:sat,peso:peso,altura:altura};
-  
-  console.log('✓ Signos vitales guardados:',_mpVitales);
+  _mpVitales={PA:pa,peso:peso,altura:altura,glucosa:glucosa||''};
   
   // Volcar todo al expediente (igual que mpTerminar pero ya con datos llenos)
   mpTerminarYVolcarVitales();
@@ -4340,50 +4144,6 @@ function mpValidarPaso2(){
   }
   mpIr(3);
 }
-function mpCalcularEdad(){
-  const dobInput=document.getElementById('mpDob')?.value?.trim();
-  const edadInput=document.getElementById('mpEdad');
-  if(!dobInput||!edadInput)return;
-  
-  // Parsear DD/MM/AAAA
-  const parts=dobInput.split('/');
-  if(parts.length!==3)return;
-  
-  const day=parseInt(parts[0]);
-  const month=parseInt(parts[1]);
-  const year=parseInt(parts[2]);
-  
-  if(isNaN(day)||isNaN(month)||isNaN(year))return;
-  
-  // Crear fecha de nacimiento
-  const dob=new Date(year,month-1,day);
-  const hoy=new Date();
-  
-  // Calcular edad
-  let edad=hoy.getFullYear()-dob.getFullYear();
-  const mesActual=hoy.getMonth();
-  const mesNac=dob.getMonth();
-  
-  if(mesActual<mesNac||(mesActual===mesNac&&hoy.getDate()<dob.getDate())){
-    edad--;
-  }
-  
-  edadInput.value=edad>0?edad+'':' —';
-}
-
-function mpValidarPaso2(){
-  const nombre=document.getElementById('mpNombre')?.value?.trim();
-  const tel=document.getElementById('mpTel')?.value?.trim();
-  const domicilio=document.getElementById('mpDomicilio')?.value?.trim();
-  
-  if(!nombre||!tel||!domicilio){
-    alert('Por favor completa los campos obligatorios:\n✓ Nombre\n✓ Teléfono\n✓ Domicilio');
-    return;
-  }
-  
-  mpIr(3);
-}
-
 function mpValidarPaso3(){
   const sinResp=MP_HABITOS.filter(h=>condState[h.id]===undefined);
   if(sinResp.length){
@@ -4478,13 +4238,13 @@ function mpTerminar(){
   const cond=id=>condState[id]===true;
   
   // NUEVOS CAMPOS PASO 3 - Volcad directamente
-  const _antHered=document.getElementById('mpAntHered');if(_antHered){const c=document.getElementById('antHF');if(c){c.value=(_antHered.value.trim()||'');console.log('✓ Volcado antHF:',c.value);}}
-  const _alergias=document.getElementById('mpAlergias');if(_alergias){const c=document.getElementById('antAlergias');if(c){c.value=(_alergias.value.trim()||'');console.log('✓ Volcado antAlergias:',c.value);}}
-  const _meds=document.getElementById('mpMeds');if(_meds){const c=document.getElementById('antMeds');if(c){c.value=(_meds.value.trim()||'');console.log('✓ Volcado antMeds:',c.value);}}
-  const _cirugia=document.getElementById('mpCirugia');if(_cirugia){const c=document.getElementById('antCirugias');if(c){c.value=(_cirugia.value.trim()||'');console.log('✓ Volcado antCirugias:',c.value);}}
-  const _sistem=document.getElementById('mpSistem');if(_sistem){const c=document.getElementById('antSis');if(c){c.value=(_sistem.value.trim()||'');console.log('✓ Volcado antSis:',c.value);}}
-  const _gineco=document.getElementById('mpGineco');if(_gineco){const c=document.getElementById('antGineco');if(c){c.value=(_gineco.value.trim()||'');console.log('✓ Volcado antGineco:',c.value);}}
-  const _dental=document.getElementById('mpDental');if(_dental){const c=document.getElementById('antDental');if(c){c.value=(_dental.value.trim()||'');console.log('✓ Volcado antDental:',c.value);}}
+  const _antHered=document.getElementById('mpAntHered');if(_antHered){const c=document.getElementById('antHF');if(c)c.value=(_antHered.value.trim()||'');}
+  const _alergias=document.getElementById('mpAlergias');if(_alergias){const c=document.getElementById('antAlergias');if(c)c.value=(_alergias.value.trim()||'');}
+  const _meds=document.getElementById('mpMeds');if(_meds){const c=document.getElementById('antMeds');if(c)c.value=(_meds.value.trim()||'');}
+  const _cirugia=document.getElementById('mpCirugia');if(_cirugia){const c=document.getElementById('antCirugias');if(c)c.value=(_cirugia.value.trim()||'');}
+  const _sistem=document.getElementById('mpSistem');if(_sistem){const c=document.getElementById('antSis');if(c)c.value=(_sistem.value.trim()||'');}
+  const _gineco=document.getElementById('mpGineco');if(_gineco){const c=document.getElementById('antGineco');if(c)c.value=(_gineco.value.trim()||'');}
+  const _dental=document.getElementById('mpDental');if(_dental){const c=document.getElementById('antDental');if(c)c.value=(_dental.value.trim()||'');}
   
   // Alergias -> antAlergias (legacy - si viene de condState)
   let alergias=[];
@@ -4527,7 +4287,7 @@ function mpTerminar(){
     Object.assign(curNote,_datosPaciente);
     curNote.condiciones={...condState};
   }else{
-    curNote={...(_datosPaciente),visitType:(document.getElementById('tipoConsulta')?.value==='seguimiento'?'seguimiento':'primera_vez'),vitales:{PA:_val('vPA'),FC:_val('vFC'),FR:_val('vFR'),Temp:_val('vTemp'),Peso:_val('vPeso'),Talla:_val('vTalla'),IMC:_val('vIMC'),Sat:_val('vSat')},expNumber:(typeof getNextExp==='function'?getNextExp():''),date:new Date().toISOString(),transcript:''};
+    curNote={...(_datosPaciente),visitType:(document.getElementById('tipoConsulta')?.value==='seguimiento'?'seguimiento':'primera_vez'),vitales:{PA:_val('vPA'),FC:_val('vFC'),FR:_val('vFR'),Temp:_val('vTemp'),Peso:_val('vPeso'),Talla:_val('vTalla'),IMC:_val('vIMC'),Sat:_val('vSat'),Glucosa:_val('vGlucosa')},expNumber:(typeof getNextExp==='function'?getNextExp():''),date:new Date().toISOString(),transcript:''};
   }
   // === VOLCAR FIRMA Y CONSENTIMIENTO AL APARTADO DE LA LAP ===
   try{
@@ -4543,22 +4303,6 @@ function mpTerminar(){
     const cNoFoto=document.getElementById('consentNoFoto');if(cNoFoto)cNoFoto.checked=true;
     // (la de difusión la deja el doctor a criterio; no se marca sola)
   }catch(e){}
-  // === VOLCADO CONFIRMADO - Log de éxito ===
-  console.log('═══════════════════════════════════════');
-  console.log('✓ VOLCADO COMPLETADO A FICHA LAPTOP');
-  console.log('═══════════════════════════════════════');
-  console.log('Datos volcados:');
-  console.log('  • Nombre:',document.getElementById('patientName')?.value);
-  console.log('  • DOB:',document.getElementById('patientDob')?.value);
-  console.log('  • Tel:',document.getElementById('patientPhone')?.value);
-  console.log('  • Antecedentes hereditarios:',document.getElementById('antHF')?.value?.slice(0,50));
-  console.log('  • Alergias:',document.getElementById('antAlergias')?.value);
-  console.log('  • Medicamentos:',document.getElementById('antMeds')?.value?.slice(0,50));
-  console.log('  • Cirugías:',document.getElementById('antCirugias')?.value?.slice(0,50));
-  console.log('  • Sistémicos:',document.getElementById('antSis')?.value?.slice(0,50));
-  console.log('  • Gineco-obstétricos:',document.getElementById('antGineco')?.value?.slice(0,50));
-  console.log('  • Dentales:',document.getElementById('antDental')?.value?.slice(0,50));
-  console.log('═══════════════════════════════════════');
   // === GUARDADO AUTOMÁTICO del expediente al terminar en la tablet ===
   try{
     if(guardarExpedienteDirecto()){
@@ -4569,203 +4313,26 @@ function mpTerminar(){
   mpIr(7);
 }
 
-// === FUNCIÓN DE SCROLL A ANTECEDENTES (para mostrar que se volcaron) ===
-function scrollAntecedentes(){
-  setTimeout(()=>{
-    const cardAnt=document.querySelector('[class="card"]');
-    if(cardAnt&&cardAnt.querySelector('#antHF')){
-      const antSection=cardAnt;
-      antSection.scrollIntoView({behavior:'smooth',block:'start'});
-      // Highlight el card por 2 segundos
-      const orig=antSection.style.background;
-      antSection.style.background='#fffacd';
-      setTimeout(()=>{antSection.style.background=orig;},2000);
-      console.log('→ Scroll a sección Antecedentes completado');
-    }
-  },500);
-}
-
-function generarRecomendacionesClinicas(){
-  const recDiv=document.getElementById('mpRecomendacionesClinicas');
-  const dosisDiv=document.getElementById('mpTablaDosis');
-  const dosisBody=document.getElementById('mpTablaDosisBody');
-  if(!recDiv)return;
-  
-  // Leer datos
-  const pa=document.getElementById('vPA')?.value?.trim()||'';
-  const fc=parseInt(document.getElementById('vFC')?.value)||null;
-  const temp=parseFloat(document.getElementById('vTemp')?.value)||null;
-  const sat=parseInt(document.getElementById('vSat')?.value)||null;
-  const peso=parseFloat(document.getElementById('vPeso')?.value)||null;
-  const antSis=document.getElementById('antSis')?.value?.toLowerCase()||'';
-  const antMeds=document.getElementById('antMeds')?.value?.toLowerCase()||'';
-  const antAlergias=document.getElementById('antAlergias')?.value?.toLowerCase()||'';
-  
-  const recomendaciones=[];
-  let restricciones=[];
-  let precauciones=[];
-  
-  // ===== LÓGICA HARD-CODED =====
-  
-  // 1. DIABÉTICO
-  const isDiab=condState['diabetes']||antSis.includes('diabét');
-  if(isDiab){
-    precauciones.push('Paciente diabético: monitorizar glucemia post-procedimiento');
-    if(pa){
-      const parts=pa.split('/');
-      const sys=parseInt(parts[0]);
-      if(sys>130){
-        restricciones.push('❌ NO usar anestesia con VASOCONSTRICTOR (epinefrina/adrenalina)');
-        restricciones.push('✅ USAR: Lidocaína o Mepivacaína sin vaso');
-      }
-    }
-  }
-  
-  // 2. HIPERTENSO
-  const isHTA=condState['hipertension']||antSis.includes('hipertensión')||antMeds.includes('losart')||antMeds.includes('enalapril')||antMeds.includes('amlod');
-  if(isHTA){
-    if(pa){
-      const parts=pa.split('/');
-      const sys=parseInt(parts[0]);
-      const dia=parseInt(parts[1]);
-      if(sys>=140||dia>=90){
-        restricciones.push('⚠️ PRESIÓN ARTERIAL ELEVADA: Considerar POSPONER procedimientos electivos');
-        restricciones.push('✅ Si es urgente: máximo anestesia sin vaso, máx 2 cartuchos');
-      }else if(sys>=130||dia>=80){
-        precauciones.push('Presión controlada. Evitar vaso si es posible');
-      }
-    }
-  }
-  
-  // 3. CARDIOPATÍA
-  const isCardio=condState['cardiopatia']||antSis.includes('cardio')||antMeds.includes('digoxina')||antMeds.includes('propranol');
-  if(isCardio){
-    restricciones.push('👁️ CARDIOPATÍA: NO usar vasoconstrictor');
-    restricciones.push('💓 Monitorizar FC constantemente (cada 5 min)');
-    if(fc&&fc>100){
-      precauciones.push('Taquicardia presente: evaluar causa antes de proceder');
-    }
-  }
-  
-  // 4. FIEBRE / FEBRÍCULA
-  if(temp&&temp>37.5){
-    restricciones.push('🔴 FIEBRE/FEBRÍCULA: POSPONER procedimientos electivos');
-    restricciones.push('Referir a médico para diagnóstico de causa');
-  }
-  
-  // 5. SATURACIÓN BAJA
-  if(sat&&sat<95){
-    precauciones.push('⚠️ Saturación O₂ baja: Evaluar causa respiratoria');
-    precauciones.push('Tener O₂ disponible durante procedimiento');
-  }
-  
-  // 6. ALERGIA A ANESTÉSICOS
-  if(antAlergias.includes('lidocaín')||antAlergias.includes('procaín')){
-    restricciones.push('⚠️ ALERGIA A ANESTÉSICOS LOCAL: Usar alternativa (benzocaína tópica)');
-  }
-  if(antAlergias.includes('sulfa')){
-    restricciones.push('⚠️ ALERGIA A SULFAS: Evitar PABA en anestésicos locales');
-  }
-  
-  // ===== RENDERIZAR RECOMENDACIONES =====
-  if(restricciones.length===0&&precauciones.length===0){
-    recDiv.innerHTML='<div style="background:#e8f5e9;border:1px solid #66bb6a;border-radius:8px;padding:10px;color:#1b5e20;font-size:11px;"><b>✅ Paciente sin restricciones clínicas detectadas</b><br>Apto para procedimiento dental estándar.</div>';
-  }else{
-    let html='';
-    if(restricciones.length>0){
-      html+='<div style="background:#ffebee;border:1px solid #ef5350;border-radius:8px;padding:10px;margin-bottom:10px;color:#c62828;font-size:11px;line-height:1.6;"><b style="display:block;margin-bottom:6px;">🚫 RESTRICCIONES CLÍNICAS:</b>'+restricciones.map(r=>'<div>'+r+'</div>').join('')+'</div>';
-    }
-    if(precauciones.length>0){
-      html+='<div style="background:#fff3e0;border:1px solid #ffa726;border-radius:8px;padding:10px;color:#e65100;font-size:11px;line-height:1.6;"><b style="display:block;margin-bottom:6px;">⚠️ PRECAUCIONES:</b>'+precauciones.map(p=>'<div>'+p+'</div>').join('')+'</div>';
-    }
-    recDiv.innerHTML=html;
-  }
-  
-  // ===== TABLA DE DOSIS =====
-  if(peso&&peso>0){
-    // Lidocaína 2%: máx 500mg total (7mg/kg)
-    const dosisMaxMg=peso*7;
-    const dosisMaxCartuchos=(dosisMaxMg/36).toFixed(1);// 1 cartucho = 36mg
-    
-    // Generar tabla
-    const ranges=[
-      {minkg:40,maxkg:50,dosis:2},
-      {minkg:51,maxkg:65,dosis:3},
-      {minkg:66,maxkg:80,dosis:4},
-      {minkg:81,maxkg:100,dosis:5},
-    ];
-    
-    let tableHtml='';
-    ranges.forEach(r=>{
-      if(peso>=r.minkg&&peso<=r.maxkg){
-        tableHtml+=`<tr style="background:#e8f8f5;"><td style="border:1px solid var(--bd);padding:6px;font-weight:700;">${r.minkg}-${r.maxkg} kg</td><td style="border:1px solid var(--bd);padding:6px;text-align:center;">${dosisMaxMg.toFixed(0)} mg</td><td style="border:1px solid var(--bd);padding:6px;text-align:center;font-weight:700;color:var(--vo);">${r.dosis}-${dosisMaxCartuchos}</td></tr>`;
-      }else{
-        tableHtml+=`<tr><td style="border:1px solid var(--bd);padding:6px;">${r.minkg}-${r.maxkg} kg</td><td style="border:1px solid var(--bd);padding:6px;text-align:center;">${(r.maxkg*7).toFixed(0)} mg</td><td style="border:1px solid var(--bd);padding:6px;text-align:center;">${Math.ceil((r.maxkg*7)/36)}</td></tr>`;
-      }
-    });
-    
-    dosisBody.innerHTML=tableHtml;
-    dosisDiv.style.display='block';
-  }else{
-    dosisDiv.style.display='none';
-  }
-}
-
-function generarRecomendacionesIA(){
-  const resultDiv=document.getElementById('mpResultadoIA');
-  resultDiv.innerHTML='<div style="text-align:center;"><span class="spinner"></span> Generando análisis con IA...</div>';
-  resultDiv.style.display='block';
-  
-  // FASE 2: Aquí irá la llamada a Claude API
-  // Por ahora solo mostramos placeholder
-  setTimeout(()=>{
-    resultDiv.innerHTML='<b>🤖 Análisis IA (Fase 2)</b><br>Esta feature estará disponible en la próxima actualización. Contacta a soporte para más información.';
-  },1000);
-}
-
 function mpTerminarYVolcarVitales(){
   // Volcar vitales de enfermera a los campos de la app
   if(_mpVitales.PA){
     const vpaField=document.getElementById('vPA');
     if(vpaField)vpaField.value=_mpVitales.PA;
   }
-  if(_mpVitales.FC){
-    const vfcField=document.getElementById('vFC');
-    if(vfcField)vfcField.value=_mpVitales.FC;
-  }
-  if(_mpVitales.Temp){
-    const vtempField=document.getElementById('vTemp');
-    if(vtempField)vtempField.value=_mpVitales.Temp;
-  }
-  if(_mpVitales.SatO2){
-    const vsatField=document.getElementById('vSat');
-    if(vsatField)vsatField.value=_mpVitales.SatO2;
-  }
   if(_mpVitales.peso){
     const vpField=document.getElementById('vPeso');
     if(vpField)vpField.value=_mpVitales.peso;
   }
   if(_mpVitales.altura){
+    // La tablet captura altura en cm; el campo del doctor usa metros
     const vtField=document.getElementById('vTalla');
-    if(vtField)vtField.value=_mpVitales.altura;
+    if(vtField)vtField.value=(parseFloat(_mpVitales.altura)/100).toFixed(2);
   }
-  
-  // === AGREGAR FECHA Y HORA AUTOMÁTICAS ===
-  const ahora=new Date();
-  const fecha=ahora.toISOString().split('T')[0]; // YYYY-MM-DD
-  const hora=ahora.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',hour12:false}); // HH:MM
-  
-  const visitDateField=document.getElementById('visitDate');
-  if(visitDateField)visitDateField.value=fecha;
-  
-  const visitTimeField=document.getElementById('visitTime');
-  if(visitTimeField)visitTimeField.value=hora;
-  
-  console.log(`✓ Timestamp agregado: ${fecha} ${hora}`);
-  
-  // Log de volcado
-  console.log('✓ Vitales volcados a ficha laptop:',_mpVitales);
-  
+  if(_mpVitales.glucosa){
+    const vgField=document.getElementById('vGlucosa');
+    if(vgField)vgField.value=_mpVitales.glucosa;
+  }
+  if(typeof calcIMC==='function')calcIMC();
   // Guardar expediente directamente
   if(guardarExpedienteDirecto()){
     console.log('✓ Expediente guardado desde tablet');
@@ -4776,12 +4343,6 @@ function mpTerminarYVolcarVitales(){
       if(sb){sb.click();}
     }catch(e){}
   }
-  
-  // === GENERAR RECOMENDACIONES CLÍNICAS ===
-  if(typeof generarRecomendacionesClinicas==='function'){
-    setTimeout(()=>generarRecomendacionesClinicas(),100);
-  }
-  
   // Ir a pantalla final (paso 9 - ¡Expediente Completo!)
   mpIr(9);
 }
@@ -4789,21 +4350,10 @@ function mpTerminarYVolcarVitales(){
 function mpPedirSalida(){
   // Al devolver la tablet, cierra el modo paciente y vuelve a la vista del doctor con los datos ya cargados
   document.getElementById('pacienteOverlay').style.display='none';
-  
-  // === ACTUALIZAR LA FICHA CON LOS DATOS VOLCADOS ===
-  // Los datos ya están en los campos, solo necesitamos refrescar visualmente
-  if(typeof actualizarFichaResumen==='function')actualizarFichaResumen();
-  if(typeof updExp==='function')updExp(); // Actualizar expediente
-  
   // llevar al doctor a la ficha del paciente (t1) dentro de nueva consulta
   if(typeof goTab==='function')goTab('t1');
   const nb=document.querySelector('[data-view="nueva"]');
   if(nb){document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));nb.classList.add('active');document.getElementById('view-nueva').classList.add('active');}
-  
-  // Scroll automático a la sección de antecedentes para que vea lo volcado
-  scrollAntecedentes();
-  
-  console.log('✓ Datos de tablet cargados en ficha laptop');
 }
 
 function dnMostrarBienvenida(){
