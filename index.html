@@ -1001,7 +1001,7 @@ body.adm-no-citas button[onclick="guardarCitaAgenda()"]{display:none!important;}
   </div>
 
   <div class="exp-panel" id="t5">
-    <div class="card"><div class="card-title">&#x1F4B0; Presupuesto estimado</div><div class="ai-badge">Precios sugeridos por IA en MXN &#x2014; edita antes de presentar al paciente.</div><div id="bgtContent"></div><div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:var(--ts);">Precios v&#xE1;lidos por <input type="number" id="cotizVigenciaDias" value="30" min="1" style="width:55px;padding:4px 7px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"> d&#xED;as a partir de la fecha de la cotizaci&#xF3;n</div><div class="btn-row"><button class="btn btn-a" onclick="imprimirCotizacion()">&#x1F5A8;&#xFE0F; Imprimir cotizaci&#xF3;n para el paciente</button></div></div>
+    <div class="card"><div class="card-title">&#x1F4B0; Presupuesto estimado</div><div class="ai-badge">Agrega desde tu tarifario fijo (precio exacto) o dicta/edita libremente &#x2014; revisa antes de presentar al paciente.</div><div id="bgtContent"></div><div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:var(--ts);">Precios v&#xE1;lidos por <input type="number" id="cotizVigenciaDias" value="30" min="1" style="width:55px;padding:4px 7px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"> d&#xED;as a partir de la fecha de la cotizaci&#xF3;n</div><div class="btn-row"><button class="btn btn-a" onclick="imprimirCotizacion()">&#x1F5A8;&#xFE0F; Imprimir cotizaci&#xF3;n para el paciente</button></div></div>
     <div class="card" style="border:1px dashed var(--na);"><div class="card-title">&#x1F512; Costos internos de laboratorio</div><div class="ai-badge" style="background:#fff8ec;border-color:#fac775;color:#7a5c1f;">Esta secci&#xF3;n es solo para ti &mdash; NO se imprime ni se muestra al paciente. Agrega aqu&#xED; el costo de laboratorio o de especialista de cada tratamiento para saber tu ganancia neta.</div><div id="costosInternosContent"></div></div>
     <div class="btn-row"><button class="btn btn-p" onclick="goTab('t6')">Continuar &#x2192; Consentimientos</button></div>
   </div>
@@ -1917,6 +1917,36 @@ const CS=[{id:'resina',t:'Restauraciones con resina',tx:'Autorizo la realizacion
 ];
 
 let odoData={},odoPedData={},bgtItems=[],curNote=null,condState={};
+const TARIFARIO_LUCIO=[
+  {n:'Consulta / valoración',p:500},
+  {n:'Limpieza dental',p:700},
+  {n:'Radiografía periapical',p:200},
+  {n:'Obturación con ionómero de vidrio',p:800},
+  {n:'Resina estética',p:1100},
+  {n:'Endodoncia uniradicular',p:3500},
+  {n:'Endodoncia biradicular',p:4500},
+  {n:'Endodoncia multirradicular',p:5500},
+  {n:'Endoposte de fibra de vidrio',p:3000},
+  {n:'Corona/puente zirconia (unidad)',p:7000},
+  {n:'Diseño de sonrisa — carillas resina (h/8 piezas)',p:50000},
+  {n:'Carilla de resina individual',p:3500},
+  {n:'Diseño de sonrisa — carillas cerámica (h/8 piezas)',p:70000},
+  {n:'Carilla de cerámica individual',p:7000},
+  {n:'Alargamiento coronario',p:2500},
+  {n:'Gingivectomía/gingivoplastia (por pieza)',p:2500},
+  {n:'Diseño de sonrisa gingival (boca completa)',p:8000},
+  {n:'Cirugía general (extracción quirúrgica)',p:2500},
+  {n:'Cirugía con interconsulta maxilofacial',p:4500},
+  {n:'Blanqueamiento dental (kit)',p:5500}
+];
+function addFromCatalogo(){
+  const sel=document.getElementById('catTarifario');if(!sel)return;
+  const idx=sel.value;if(idx==='')return;
+  const item=TARIFARIO_LUCIO[Number(idx)];if(!item)return;
+  bgtItems.push({id:Date.now(),procedimiento:item.n,descripcion:'',diente:'',precio:item.p,cantidad:1,costoLab:0});
+  renderBgt();
+  sel.value='';
+}
 let diagOperatorio='',diagPediatrico='',diagPeriodontal='';
 function renderDiagConsolidado(){
   const el=document.getElementById('diagConsolidadoContent');if(!el)return;
@@ -2597,7 +2627,9 @@ function renderPerioDiag(diag){if(!diag)return;document.getElementById('perioDia
 
 function renderBgt(){
   const total=bgtItems.reduce((s,b)=>s+b.precio*b.cantidad,0);
-  document.getElementById('bgtContent').innerHTML='<table class="bgt-table"><thead><tr><th>Procedimiento</th><th>Desc.</th><th>Diente</th><th>Cant.</th><th>Precio MXN</th><th>Subtotal</th><th></th></tr></thead><tbody id="bgtBody">'+bgtItems.map(bRow).join('')+'</tbody></table><div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;"><div style="font-size:12px;color:var(--ts);">Descuento:</div><select id="descTipo" style="padding:5px 7px;border:1px solid var(--bd);border-radius:6px;font-size:12px;background:var(--bl);color:var(--tx);"><option value="pct">Porcentaje %</option><option value="monto">Monto fijo $</option></select><input type="number" id="descPct" min="0" placeholder="0" style="width:80px;padding:5px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"><input type="text" id="descMotivo" placeholder="Motivo (aparece en la cotizaci&#xF3;n)" style="flex:1;min-width:140px;padding:5px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"><button class="btn btn-s btn-sm" onclick="aplicarDescuento()">Aplicar</button><span id="descDisplay" style="font-size:11px;color:var(--ro);font-weight:500;"></span></div><div class="bgt-total">Total: <span id="bgtTotal">$'+total.toLocaleString('es-MX')+'</span> MXN</div><div style="margin-top:8px;"><button class="btn btn-s btn-sm" onclick="addBRow()">+ Agregar procedimiento</button></div>';
+  const catOptions='<option value="">+ Agregar de mi tarifario...</option>'+TARIFARIO_LUCIO.map((t,i)=>'<option value="'+i+'">'+t.n+' — $'+t.p.toLocaleString('es-MX')+'</option>').join('');
+  const catBar='<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;"><select id="catTarifario" onchange="addFromCatalogo()" style="flex:1;min-width:220px;padding:7px 9px;border:1px solid var(--bd);border-radius:7px;font-size:12px;background:var(--bl);color:var(--tx);">'+catOptions+'</select><span style="font-size:10.5px;color:var(--ts);">Precio exacto de tu tarifario — sin depender de la sugerencia de la IA</span></div>';
+  document.getElementById('bgtContent').innerHTML=catBar+'<table class="bgt-table"><thead><tr><th>Procedimiento</th><th>Desc.</th><th>Diente</th><th>Cant.</th><th>Precio MXN</th><th>Subtotal</th><th></th></tr></thead><tbody id="bgtBody">'+bgtItems.map(bRow).join('')+'</tbody></table><div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;"><div style="font-size:12px;color:var(--ts);">Descuento:</div><select id="descTipo" style="padding:5px 7px;border:1px solid var(--bd);border-radius:6px;font-size:12px;background:var(--bl);color:var(--tx);"><option value="pct">Porcentaje %</option><option value="monto">Monto fijo $</option></select><input type="number" id="descPct" min="0" placeholder="0" style="width:80px;padding:5px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"><input type="text" id="descMotivo" placeholder="Motivo (aparece en la cotizaci&#xF3;n)" style="flex:1;min-width:140px;padding:5px 8px;border:1px solid var(--bd);border-radius:6px;font-size:12px;"><button class="btn btn-s btn-sm" onclick="aplicarDescuento()">Aplicar</button><span id="descDisplay" style="font-size:11px;color:var(--ro);font-weight:500;"></span></div><div class="bgt-total">Total: <span id="bgtTotal">$'+total.toLocaleString('es-MX')+'</span> MXN</div><div style="margin-top:8px;"><button class="btn btn-s btn-sm" onclick="addBRow()">+ Agregar procedimiento manual</button></div>';
   if(window._descuento&&window._descuento.monto>0){const _d=window._descuento;const tS=document.getElementById('descTipo'),vS=document.getElementById('descPct'),mS=document.getElementById('descMotivo');if(tS)tS.value=_d.tipo;if(vS)vS.value=_d.valor;if(mS)mS.value=_d.motivo||'';aplicarDescuento();}
   renderCostosInternos();
 }
