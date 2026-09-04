@@ -3969,10 +3969,64 @@ const MP_HABITOS=[
   {id:'sus_benzo',l:'Tranquilizantes / relajantes (clonazepam, alprazolam)'}
 ];
 let _mpPaso=1, _mpSexo='', _mpFoto=null, _mpSignCanvas=null, _mpSignCtx=null, _mpSignDraw=false, _mpFirmado=false;
+let _mpSalidaProtegida=false;
+// Protección: evitar perder datos si cierran la pestaña o le dan "atrás" mientras el paciente está llenando
+window.addEventListener('beforeunload',function(e){
+  if(_mpSalidaProtegida&&document.getElementById('pacienteOverlay')&&document.getElementById('pacienteOverlay').style.display==='block'){
+    e.preventDefault();e.returnValue='';return '';
+  }
+});
+window.addEventListener('popstate',function(e){
+  if(_mpSalidaProtegida&&document.getElementById('pacienteOverlay')&&document.getElementById('pacienteOverlay').style.display==='block'){
+    try{history.pushState({modoPaciente:true},'',location.href);}catch(err){}
+    alert('Tus datos están guardados como borrador automático. Para salir, usa el botón "Devolver tablet al doctor" al terminar, o simplemente sigue llenando — nada se pierde.');
+  }
+});
 // Vitales de enfermera
 let _mpVitales={PA:'',peso:'',altura:''};
 let _mpEnfermeraActiva=false;
 
+function mpAutoguardarBorrador(){
+  try{
+    const v=id=>{const e=document.getElementById(id);return e?e.value:'';};
+    const detalles={};
+    Object.keys(condState).forEach(id=>{const e=document.getElementById('mpcv-'+id);if(e&&e.value)detalles[id]=e.value;});
+    const draft={
+      paso:_mpPaso,
+      guardadoEn:new Date().toISOString(),
+      nombre:v('mpNombre'),dob:v('mpDob'),tel:v('mpTel'),motivo:v('mpMotivo'),
+      estadoCivil:v('mpEstadoCivil'),ocupacion:v('mpOcupacion'),correo:v('mpCorreo'),domicilio:v('mpDomicilio'),emergencia:v('mpEmergencia'),
+      antHered:v('mpAntHered'),alergias:v('mpAlergias'),meds:v('mpMeds'),cirugia:v('mpCirugia'),sistem:v('mpSistem'),gineco:v('mpGineco'),dental:v('mpDental'),
+      sexo:_mpSexo,foto:_mpFoto,
+      condState:{...condState},detalles:detalles
+    };
+    localStorage.setItem('dn_mp_draft',JSON.stringify(draft));
+  }catch(e){console.error('No se pudo autoguardar el borrador de tablet:',e);}
+}
+function mpHayBorrador(){
+  try{const d=localStorage.getItem('dn_mp_draft');if(!d)return null;const parsed=JSON.parse(d);return(parsed&&parsed.nombre)?parsed:null;}catch(e){return null;}
+}
+function mpLimpiarBorrador(){try{localStorage.removeItem('dn_mp_draft');}catch(e){}}
+function mpRestaurarBorrador(draft){
+  const setv=(id,val)=>{const e=document.getElementById(id);if(e&&val)e.value=val;};
+  setv('mpNombre',draft.nombre);setv('mpDob',draft.dob);setv('mpTel',draft.tel);setv('mpMotivo',draft.motivo);
+  setv('mpEstadoCivil',draft.estadoCivil);setv('mpOcupacion',draft.ocupacion);setv('mpCorreo',draft.correo);setv('mpDomicilio',draft.domicilio);setv('mpEmergencia',draft.emergencia);
+  setv('mpAntHered',draft.antHered);setv('mpAlergias',draft.alergias);setv('mpMeds',draft.meds);setv('mpCirugia',draft.cirugia);setv('mpSistem',draft.sistem);setv('mpGineco',draft.gineco);setv('mpDental',draft.dental);
+  if(draft.sexo){_mpSexo=draft.sexo;document.querySelectorAll('#mpSexo .mp-chip').forEach(c=>{if(c.dataset.v===draft.sexo)c.classList.add('on');});}
+  if(draft.foto){
+    _mpFoto=draft.foto;
+    const fb=document.getElementById('mpFotoBox');if(fb)fb.innerHTML='<img src="'+_mpFoto+'" style="width:100%;height:100%;object-fit:cover;">';
+    const fd=document.getElementById('mpFotoDel');if(fd)fd.style.display='inline-flex';
+    const btn=document.getElementById('mpFotoBtn');if(btn){btn.style.opacity='1';btn.style.cursor='pointer';}
+    const fa=document.getElementById('mpFotoAlert');if(fa)fa.style.display='none';
+  }
+  Object.keys(draft.condState||{}).forEach(id=>{condState[id]=draft.condState[id];});
+  mpRenderAntecedentes();mpRenderHabitos();
+  Object.keys(draft.condState||{}).forEach(id=>{if(document.getElementById('mpby-'+id))mpSet(id,draft.condState[id]);});
+  Object.keys(draft.detalles||{}).forEach(id=>{const e=document.getElementById('mpcv-'+id);if(e)e.value=draft.detalles[id];});
+  const pasoIr=Math.min(Math.max(draft.paso||1,1),4);
+  mpIr(pasoIr);
+}
 function abrirModoPaciente(){
   // Reset de estado del formulario del paciente
   ['mpNombre','mpDob','mpTel','mpTrato','mpMotivo'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
@@ -4043,7 +4097,20 @@ function abrirModoPaciente(){
   
   document.getElementById('pacienteOverlay').style.display='block';
   window.scrollTo(0,0);
-  mpIr(0);
+  // === RECUPERACIÓN DE BORRADOR (por si se cerró/salió sin terminar la vez pasada) ===
+  const borrador=mpHayBorrador();
+  if(borrador&&!pName){
+    if(confirm('Hay una historia clínica sin terminar de "'+borrador.nombre+'" (guardada automáticamente). ¿Quieres continuar donde se quedó?\n\nToca Cancelar para empezar una nueva.')){
+      mpRestaurarBorrador(borrador);
+    }else{
+      mpLimpiarBorrador();
+      mpIr(0);
+    }
+  }else{
+    mpIr(0);
+  }
+  _mpSalidaProtegida=true;
+  try{history.pushState({modoPaciente:true},'',location.href);}catch(e){}
   // chips de sexo
   document.querySelectorAll('#mpSexo .mp-chip').forEach(c=>{c.onclick=()=>{document.querySelectorAll('#mpSexo .mp-chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');_mpSexo=c.dataset.v;};});
 }
@@ -4068,6 +4135,7 @@ function mpValidarFoto(){
     alert('Por favor captura una foto antes de continuar.');
     return;
   }
+  mpAutoguardarBorrador();
   mpIr(2);
 }
 
@@ -4109,6 +4177,7 @@ function mpQ(id,label,detHint){
 function guardarExpedienteDirecto(){
   // Guardado directo sin depender del botón saveBtn (que está en laptop)
   if(!curNote){console.log('curNote vacío, esperando...');return false;}
+  if(!curNote.patientName||!curNote.patientName.trim()){console.error('guardarExpedienteDirecto: patientName vacío, no se puede guardar');return false;}
   const esSeguimiento=curNote.visitType==='seguimiento'&&curNote.soap;
   const soap=esSeguimiento?{...curNote.soap}:getSOAP();
   const pN=curNote.patientName.trim(),key=pN.toLowerCase().trim();
@@ -4174,6 +4243,7 @@ function mpValidarPaso2(){
       return;
     }
   }
+  mpAutoguardarBorrador();
   mpIr(3);
 }
 function mpValidarPaso3(){
@@ -4183,6 +4253,7 @@ function mpValidarPaso3(){
       return;
     }
   }
+  mpAutoguardarBorrador();
   mpIr(4);
 }
 function mpValidarPaso4(){
@@ -4192,6 +4263,7 @@ function mpValidarPaso4(){
       return;
     }
   }
+  mpAutoguardarBorrador();
   mpIr(5);
 }
 function mpCargarFoto(input){
@@ -4245,83 +4317,98 @@ function mpTerminar(){
   // Sellar firma con fecha/hora
   const ahora=new Date();
   const sello=ahora.toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'})+' '+ahora.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
-  _mpSignCtx.font='10px Segoe UI';_mpSignCtx.fillStyle='#5b7d76';
-  _mpSignCtx.fillText('Firmado: '+sello,8,_mpSignCanvas.height-7);
-  // === VOLCAR TODO AL EXPEDIENTE ===
-  document.getElementById('patientName').value=nombre;
-  const dob=document.getElementById('mpDob').value.trim();if(dob)document.getElementById('patientDob').value=dob;
-  const tel=document.getElementById('mpTel').value.trim();if(tel)document.getElementById('patientPhone').value=tel;
-  if(_mpSexo){const ps=document.getElementById('patientSex');if(ps){ps.value=(_mpSexo==='Hombre'?'Masculino':(_mpSexo==='Mujer'?'Femenino':_mpSexo));}}
-  const motivo=document.getElementById('mpMotivo').value.trim();
-  if(motivo){const mc=document.getElementById('motivoConsulta');if(mc)mc.value=motivo;}
-  // foto
-  if(_mpFoto){window._patientPhoto=_mpFoto;if(typeof renderFotoPaciente==='function')renderFotoPaciente();}
-  // firma del paciente
-  window._firmaPaciente=_mpSignCanvas.toDataURL('image/png');
-  window._firmaTimestamp=sello;
-  window._mpDeclaracion={texto:'Declaracion de veracidad aceptada por el paciente en modo tablet',sello:sello};
-  // re-render del cuestionario de la app y detalles
-  if(typeof renderConds==='function'){renderConds();}
-  // aplicar setCond en la app para cada condicion marcada (dispara alertas)
-  Object.keys(condState).forEach(id=>{if(typeof setCond==='function'&&document.getElementById('ci-'+id))setCond(id,condState[id]);});
-  // === VOLCAR DETALLES A LOS CAMPOS REALES DE ANTECEDENTES ===
-  // Recolectar los detalles escritos por el paciente, agrupados
-  const det=id=>{const e=document.getElementById('mpcv-'+id);return e&&e.value.trim()?e.value.trim():'';};
-  const cond=id=>condState[id]===true;
-  
-  // NUEVOS CAMPOS PASO 3 - Volcad directamente
-  const _antHered=document.getElementById('mpAntHered');if(_antHered){const c=document.getElementById('antHF');if(c)c.value=(_antHered.value.trim()||'');}
-  const _alergias=document.getElementById('mpAlergias');if(_alergias){const c=document.getElementById('antAlergias');if(c)c.value=(_alergias.value.trim()||'');}
-  const _meds=document.getElementById('mpMeds');if(_meds){const c=document.getElementById('antMeds');if(c)c.value=(_meds.value.trim()||'');}
-  const _cirugia=document.getElementById('mpCirugia');if(_cirugia){const c=document.getElementById('antCirugias');if(c)c.value=(_cirugia.value.trim()||'');}
-  const _sistem=document.getElementById('mpSistem');if(_sistem){const c=document.getElementById('antSis');if(c)c.value=(_sistem.value.trim()||'');}
-  const _gineco=document.getElementById('mpGineco');if(_gineco){const c=document.getElementById('antGineco');if(c)c.value=(_gineco.value.trim()||'');}
-  const _dental=document.getElementById('mpDental');if(_dental){const c=document.getElementById('antDental');if(c)c.value=(_dental.value.trim()||'');}
-  
-  // Alergias -> antAlergias (legacy - si viene de condState)
-  let alergias=[];
-  if(cond('alergias')){const d=det('alergias');alergias.push('Alergias'+(d?': '+d:''));}
-  if(alergias.length){const c=document.getElementById('antAlergias');if(c)c.value=(c.value?c.value+' | ':'')+alergias.join('; ');}
-  // Enfermedades sistemicas -> antSis (todas las condiciones marcadas Si con su detalle, menos alergias/habitos/heredo)
-  const habIds=(typeof MP_HABITOS!=='undefined')?MP_HABITOS.map(h=>h.id):[];
-  let sis=[];
-  Object.keys(condState).forEach(id=>{
-    if(!condState[id])return;
-    if(id==='alergias'||habIds.includes(id))return;
-    const c=CONDS.find(x=>x.id===id);if(!c)return;
-    const d=det(id);sis.push(c.l+(d?' ('+d+')':''));
-  });
-  if(sis.length){const c=document.getElementById('antSis');if(c)c.value=(c.value?c.value+' | ':'')+sis.join('; ');}
-  // Habitos/sustancias -> antNoPat si existe, si no a antSis
-  let habs=[];
-  habIds.forEach(id=>{if(condState[id]){const h=MP_HABITOS.find(x=>x.id===id);const d=det(id);habs.push((h?h.l:id)+(d?' ('+d+')':''));}});
-  if(habs.length){const c=document.getElementById('antNoPat')||document.getElementById('antSis');if(c)c.value=(c.value?c.value+' | ':'')+'Hábitos/sustancias: '+habs.join('; ');}
-  if(typeof updAlerts==='function')updAlerts();
-  if(typeof actualizarFichaResumen==='function')actualizarFichaResumen();
-  // === ACTUALIZAR curNote PARA QUE EL GUARDADO PERSISTA LO DEL PACIENTE ===
-  // Sin esto, el expediente se guarda vacío porque el guardado lee de curNote, no de los campos.
-  const _val=id=>{const e=document.getElementById(id);return e?e.value:'';};
-  const _datosPaciente={
-    patientName:nombre,
-    patientAge:_val('patientAge'),
-    patientSex:_val('patientSex'),
-    patientDob:_val('patientDob'),
-    patientCivil:_val('patientCivil'),
-    patientJob:_val('patientJob'),
-    patientPhone:_val('patientPhone'),
-    patientEmail:_val('patientEmail'),
-    patientAddress:_val('patientAddress'),
-    patientEmergency:_val('patientEmergency'),
-    antHF:_val('antHF'),antSis:_val('antSis'),antAlergias:_val('antAlergias'),antMeds:_val('antMeds'),antCirugias:_val('antCirugias'),antGineco:_val('antGineco'),antDental:_val('antDental'),
-    condiciones:{...condState}
-  };
-  if(typeof curNote!=='undefined'&&curNote){
-    Object.assign(curNote,_datosPaciente);
-    curNote.condiciones={...condState};
-  }else{
-    curNote={...(_datosPaciente),visitType:(document.getElementById('tipoConsulta')?.value==='seguimiento'?'seguimiento':'primera_vez'),vitales:{PA:_val('vPA'),FC:_val('vFC'),FR:_val('vFR'),Temp:_val('vTemp'),Peso:_val('vPeso'),Talla:_val('vTalla'),IMC:_val('vIMC'),Sat:_val('vSat'),Glucosa:_val('vGlucosa')},expNumber:(typeof getNextExp==='function'?getNextExp():''),date:new Date().toISOString(),transcript:''};
+  try{_mpSignCtx.font='10px Segoe UI';_mpSignCtx.fillStyle='#5b7d76';_mpSignCtx.fillText('Firmado: '+sello,8,_mpSignCanvas.height-7);}catch(e){console.error('Error al sellar firma:',e);}
+
+  // === PASO 1 (CRÍTICO, BLINDADO): volcar antecedentes a los campos reales y GUARDAR YA ===
+  // Todo lo de aquí abajo hasta el guardado va en try/catch: si algo falla, igual
+  // intentamos guardar con lo que sí se pudo recolectar, en vez de perder todo.
+  let guardadoOk=false;
+  try{
+    document.getElementById('patientName').value=nombre;
+    const dob=document.getElementById('mpDob').value.trim();if(dob)document.getElementById('patientDob').value=dob;
+    const tel=document.getElementById('mpTel').value.trim();if(tel)document.getElementById('patientPhone').value=tel;
+    if(_mpSexo){const ps=document.getElementById('patientSex');if(ps){ps.value=(_mpSexo==='Hombre'?'Masculino':(_mpSexo==='Mujer'?'Femenino':_mpSexo));}}
+    const motivo=document.getElementById('mpMotivo').value.trim();
+    if(motivo){const mc=document.getElementById('motivoConsulta');if(mc)mc.value=motivo;}
+    if(_mpFoto){window._patientPhoto=_mpFoto;}
+    window._firmaPaciente=_mpSignCanvas.toDataURL('image/png');
+    window._firmaTimestamp=sello;
+    window._mpDeclaracion={texto:'Declaracion de veracidad aceptada por el paciente en modo tablet',sello:sello};
+
+    // Volcar detalles de antecedentes a los campos reales
+    const det=id=>{const e=document.getElementById('mpcv-'+id);return e&&e.value.trim()?e.value.trim():'';};
+    const cond=id=>condState[id]===true;
+    const _antHered=document.getElementById('mpAntHered');if(_antHered){const c=document.getElementById('antHF');if(c)c.value=(_antHered.value.trim()||'');}
+    const _alergias=document.getElementById('mpAlergias');if(_alergias){const c=document.getElementById('antAlergias');if(c)c.value=(_alergias.value.trim()||'');}
+    const _meds=document.getElementById('mpMeds');if(_meds){const c=document.getElementById('antMeds');if(c)c.value=(_meds.value.trim()||'');}
+    const _cirugia=document.getElementById('mpCirugia');if(_cirugia){const c=document.getElementById('antCirugias');if(c)c.value=(_cirugia.value.trim()||'');}
+    const _sistem=document.getElementById('mpSistem');if(_sistem){const c=document.getElementById('antSis');if(c)c.value=(_sistem.value.trim()||'');}
+    const _gineco=document.getElementById('mpGineco');if(_gineco){const c=document.getElementById('antGineco');if(c)c.value=(_gineco.value.trim()||'');}
+    const _dental=document.getElementById('mpDental');if(_dental){const c=document.getElementById('antDental');if(c)c.value=(_dental.value.trim()||'');}
+
+    let alergias=[];
+    if(cond('alergias')){const d=det('alergias');alergias.push('Alergias'+(d?': '+d:''));}
+    if(alergias.length){const c=document.getElementById('antAlergias');if(c)c.value=(c.value?c.value+' | ':'')+alergias.join('; ');}
+    const habIds=(typeof MP_HABITOS!=='undefined')?MP_HABITOS.map(h=>h.id):[];
+    let sis=[];
+    Object.keys(condState).forEach(id=>{
+      if(!condState[id])return;
+      if(id==='alergias'||habIds.includes(id))return;
+      const c=CONDS.find(x=>x.id===id);if(!c)return;
+      const d=det(id);sis.push(c.l+(d?' ('+d+')':''));
+    });
+    if(sis.length){const c=document.getElementById('antSis');if(c)c.value=(c.value?c.value+' | ':'')+sis.join('; ');}
+    let habs=[];
+    habIds.forEach(id=>{if(condState[id]){const h=MP_HABITOS.find(x=>x.id===id);const d=det(id);habs.push((h?h.l:id)+(d?' ('+d+')':''));}});
+    if(habs.length){const c=document.getElementById('antNoPat')||document.getElementById('antSis');if(c)c.value=(c.value?c.value+' | ':'')+'Hábitos/sustancias: '+habs.join('; ');}
+
+    // Armar curNote con TODO lo recolectado y guardar de inmediato
+    const _val=id=>{const e=document.getElementById(id);return e?e.value:'';};
+    const _datosPaciente={
+      patientName:nombre,
+      patientAge:_val('patientAge'),
+      patientSex:_val('patientSex'),
+      patientDob:_val('patientDob'),
+      patientCivil:_val('patientCivil'),
+      patientJob:_val('patientJob'),
+      patientPhone:_val('patientPhone'),
+      patientEmail:_val('patientEmail'),
+      patientAddress:_val('patientAddress'),
+      patientEmergency:_val('patientEmergency'),
+      antHF:_val('antHF'),antSis:_val('antSis'),antAlergias:_val('antAlergias'),antMeds:_val('antMeds'),antCirugias:_val('antCirugias'),antGineco:_val('antGineco'),antDental:_val('antDental'),
+      condiciones:{...condState}
+    };
+    if(typeof curNote!=='undefined'&&curNote){
+      Object.assign(curNote,_datosPaciente);
+      curNote.condiciones={...condState};
+    }else{
+      curNote={...(_datosPaciente),visitType:(document.getElementById('tipoConsulta')?.value==='seguimiento'?'seguimiento':'primera_vez'),vitales:{PA:_val('vPA'),FC:_val('vFC'),FR:_val('vFR'),Temp:_val('vTemp'),Peso:_val('vPeso'),Talla:_val('vTalla'),IMC:_val('vIMC'),Sat:_val('vSat'),Glucosa:_val('vGlucosa')},expNumber:(typeof getNextExp==='function'?getNextExp():''),date:new Date().toISOString(),transcript:''};
+    }
+    guardadoOk=guardarExpedienteDirecto();
+  }catch(e){
+    console.error('Error al preparar/guardar expediente desde tablet:',e);
+    // Intento de rescate: guardar aunque sea lo mínimo (nombre/tel), para no perder la visita
+    try{
+      if(!curNote)curNote={patientName:nombre,patientPhone:document.getElementById('mpTel')?.value?.trim()||'',visitType:'primera_vez',vitales:{},expNumber:(typeof getNextExp==='function'?getNextExp():''),date:new Date().toISOString(),transcript:'',condiciones:{...condState}};
+      guardadoOk=guardarExpedienteDirecto();
+    }catch(e2){console.error('Rescate de guardado también falló:',e2);}
   }
-  // === VOLCAR FIRMA Y CONSENTIMIENTO AL APARTADO DE LA LAP ===
+  if(!guardadoOk){
+    alert('⚠️ Hubo un problema guardando el expediente. Por favor avisa al doctor antes de devolver la tablet — no cierres esta pantalla.');
+    return;
+  }
+
+  // === PASO 2 (COSMÉTICO, no crítico): refrescar cuestionario/alertas/resumen visual en la lap ===
+  // Esto va DESPUÉS del guardado a propósito: si algo aquí falla, el expediente ya quedó guardado.
+  try{
+    if(typeof renderConds==='function'){renderConds();}
+    Object.keys(condState).forEach(id=>{if(typeof setCond==='function'&&document.getElementById('ci-'+id))setCond(id,condState[id]);});
+    if(typeof updAlerts==='function')updAlerts();
+    if(typeof actualizarFichaResumen==='function')actualizarFichaResumen();
+    if(_mpFoto&&typeof renderFotoPaciente==='function')renderFotoPaciente();
+  }catch(e){console.error('Error refrescando vista (no afecta el guardado):',e);}
+
+  // === Volcar firma y consentimiento al apartado de la lap (no crítico) ===
   try{
     const sc=document.getElementById('signCanvas');
     if(sc){const sctx=sc.getContext('2d');const img=new Image();
@@ -4330,17 +4417,12 @@ function mpTerminar(){
     }
     const elFH=document.getElementById('signFechaHora');
     if(elFH){elFH.textContent='Firmado digitalmente el '+sello+' — '+nombre+' (llenado en tablet por el paciente)';elFH.style.display='block';}
-    // marcar las 3 casillas del consentimiento verbal
     const cAviso=document.getElementById('consentAviso');if(cAviso)cAviso.checked=true;
     const cNoFoto=document.getElementById('consentNoFoto');if(cNoFoto)cNoFoto.checked=true;
-    // (la de difusión la deja el doctor a criterio; no se marca sola)
-  }catch(e){}
-  // === GUARDADO AUTOMÁTICO del expediente al terminar en la tablet ===
-  try{
-    if(guardarExpedienteDirecto()){
-      console.log('✓ Datos del paciente guardados desde tablet');
-    }
-  }catch(e){console.error('Error al guardar:',e);}
+  }catch(e){console.error('Error volcando firma a la lap (no afecta el guardado):',e);}
+
+  console.log('✓ Datos del paciente guardados desde tablet');
+  mpLimpiarBorrador();
   // ir a pantalla de "Solicita a enfermera" (paso 7)
   mpIr(7);
 }
@@ -4381,6 +4463,8 @@ function mpTerminarYVolcarVitales(){
 
 function mpPedirSalida(){
   // Al devolver la tablet, cierra el modo paciente y vuelve a la vista del doctor con los datos ya cargados
+  _mpSalidaProtegida=false;
+  mpLimpiarBorrador();
   document.getElementById('pacienteOverlay').style.display='none';
   // llevar al doctor a la ficha del paciente (t1) dentro de nueva consulta
   if(typeof goTab==='function')goTab('t1');
