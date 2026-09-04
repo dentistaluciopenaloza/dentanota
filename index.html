@@ -568,7 +568,8 @@ body.adm-no-citas button[onclick="guardarCitaAgenda()"]{display:none!important;}
       <div style="width:64px;height:64px;border-radius:50%;background:#e4f7ef;display:flex;align-items:center;justify-content:center;font-size:32px;margin:8px auto 14px;">✓</div>
       <h3 style="font-size:18px;color:var(--vo);margin-bottom:4px;" id="mpGracias">¡Expediente Completo!</h3>
       <div style="font-size:12px;color:var(--ts);margin-bottom:22px;">Tu historia clínica se guardó. El doctor puede verlo ya en su pantalla.</div>
-      <div style="max-width:300px;margin:0 auto;"><button class="btn btn-p" style="width:100%;" onclick="mpPedirSalida()">Devolver tablet al doctor</button></div>
+      <div style="font-size:10.5px;color:var(--ts);margin-bottom:14px;">🔒 Al continuar se cerrará la sesión de esta tablet por seguridad.</div>
+      <div style="max-width:300px;margin:0 auto;"><button class="btn btn-p" style="width:100%;" onclick="mpPedirSalida()">Guardar y cerrar sesión</button></div>
     </div>
   </div>
 </div>
@@ -3979,7 +3980,7 @@ window.addEventListener('beforeunload',function(e){
 window.addEventListener('popstate',function(e){
   if(_mpSalidaProtegida&&document.getElementById('pacienteOverlay')&&document.getElementById('pacienteOverlay').style.display==='block'){
     try{history.pushState({modoPaciente:true},'',location.href);}catch(err){}
-    alert('Tus datos están guardados como borrador automático. Para salir, usa el botón "Devolver tablet al doctor" al terminar, o simplemente sigue llenando — nada se pierde.');
+    alert('Tus datos están guardados como borrador automático. Para salir, usa el botón "Guardar y cerrar sesión" al terminar, o simplemente sigue llenando — nada se pierde.');
   }
 });
 // Vitales de enfermera
@@ -4462,7 +4463,9 @@ function mpTerminarYVolcarVitales(){
 }
 
 function mpPedirSalida(){
-  // Al devolver la tablet, cierra el modo paciente y vuelve a la vista del doctor con los datos ya cargados
+  // Al devolver la tablet: cierra el modo paciente Y cierra la sesión del doctor,
+  // para que la tablet quede en pantalla de login (no expuesta con todos los expedientes)
+  // hasta que el doctor (u otra persona autorizada) inicie sesión de nuevo.
   _mpSalidaProtegida=false;
   mpLimpiarBorrador();
   document.getElementById('pacienteOverlay').style.display='none';
@@ -4470,6 +4473,13 @@ function mpPedirSalida(){
   if(typeof goTab==='function')goTab('t1');
   const nb=document.querySelector('[data-view="nueva"]');
   if(nb){document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));nb.classList.add('active');document.getElementById('view-nueva').classList.add('active');}
+  // Cerrar sesión de verdad: la tablet vuelve a la pantalla de login,
+  // así el doctor (u otra persona autorizada) entra con su propio usuario y contraseña.
+  try{
+    if(typeof dnAuth!=='undefined'&&dnAuth&&typeof dnAuth.signOut==='function'){
+      dnAuth.signOut();
+    }
+  }catch(e){console.error('Error cerrando sesión al devolver tablet:',e);}
 }
 
 function dnMostrarBienvenida(){
